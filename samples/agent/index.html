@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClaudeCanvas Demo</title>
+    <style>
+      :root {
+        --cc-primary: #6366f1;
+        --cc-primary-hover: #4f46e5;
+        --cc-primary-light: rgba(99, 102, 241, 0.1);
+        --cc-secondary: #f1f5f9;
+        --cc-secondary-hover: #e2e8f0;
+        --cc-danger: #ef4444;
+        --cc-danger-hover: #dc2626;
+        --cc-text: #1e293b;
+        --cc-text-secondary: #64748b;
+        --cc-text-placeholder: #94a3b8;
+        --cc-border: #e2e8f0;
+        --cc-input-bg: #ffffff;
+        --cc-card-bg: #ffffff;
+        --cc-disabled-bg: #f8fafc;
+        --cc-code-bg: #f1f5f9;
+        --cc-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        --cc-font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--cc-font);
+        background: #f8fafc;
+        min-height: 100vh;
+        color: var(--cc-text);
+      }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        margin-bottom: 2rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--cc-text);
+      }
+
+      header p {
+        color: var(--cc-text-secondary);
+        margin-top: 0.5rem;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--cc-border);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--cc-border);
+        font-weight: 500;
+      }
+
+      .panel-content {
+        padding: 1rem;
+      }
+
+      .input-area {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .input-area textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.75rem;
+        border: 1px solid var(--cc-border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.875rem;
+        resize: vertical;
+      }
+
+      .input-area textarea:focus {
+        outline: none;
+        border-color: var(--cc-primary);
+        box-shadow: 0 0 0 3px var(--cc-primary-light);
+      }
+
+      .input-area button {
+        align-self: flex-end;
+        padding: 0.625rem 1.25rem;
+        background: var(--cc-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .input-area button:hover {
+        background: var(--cc-primary-hover);
+      }
+
+      .input-area button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        color: var(--cc-text-secondary);
+      }
+
+      .loading::before {
+        content: '';
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 2px solid var(--cc-border);
+        border-top-color: var(--cc-primary);
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+        margin-right: 0.75rem;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--cc-text-secondary);
+      }
+
+      .json-output {
+        font-family: var(--cc-font-mono);
+        font-size: 0.75rem;
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>ClaudeCanvas Demo</h1>
+        <p>Generate UI with Claude Code - describe what you want and see it rendered</p>
+        <div id="server-status" style="font-size: 0.875rem; margin-top: 0.5rem;">Checking server...</div>
+      </header>
+
+      <div class="main-content">
+        <div class="panel">
+          <div class="panel-header">Describe Your UI</div>
+          <div class="panel-content">
+            <div class="input-area">
+              <textarea id="prompt" placeholder="Example: Create a login form with email and password fields, a remember me checkbox, and a submit button"></textarea>
+              <button id="generate">Generate UI</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">Generated UI</div>
+          <div class="panel-content">
+            <cc-surface id="surface"></cc-surface>
+            <div id="empty-state" class="empty-state">
+              Enter a prompt and click Generate to see your UI
+            </div>
+            <div id="loading" class="loading" style="display: none">
+              Generating UI...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 2rem">
+        <div class="panel-header">JSON Output</div>
+        <div class="panel-content">
+          <div id="json-output" class="json-output">// Generated JSON will appear here</div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

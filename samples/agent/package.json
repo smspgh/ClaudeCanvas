@@ -1,0 +1,22 @@
+{
+  "name": "@claude-canvas/sample-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sample ClaudeCanvas agent application",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@claude-canvas/core": "workspace:*",
+    "@claude-canvas/client": "workspace:*",
+    "@claude-canvas/renderer-lit": "workspace:*",
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@claude-canvas/sample-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ClaudeCanvas server using Claude Code",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@claude-canvas/core": "workspace:*",
+    "@claude-canvas/client": "workspace:*",
+    "express": "^4.21.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

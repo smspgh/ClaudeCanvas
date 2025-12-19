@@ -1,0 +1,27 @@
+{
+  "name": "claude-canvas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Declarative UI generation for Claude AI agents",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "ui",
+    "declarative",
+    "agent"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
