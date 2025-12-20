@@ -117,6 +117,9 @@ export class CcSurface extends LitElement {
       case 'TextField':
         return html`<cc-text-field .component=${component} .dataModel=${this.dataModel}></cc-text-field>`;
 
+      case 'Checkbox':
+        return html`<cc-checkbox .component=${component} .dataModel=${this.dataModel}></cc-checkbox>`;
+
       case 'Row':
         return html`
           <cc-row .component=${component} .dataModel=${this.dataModel}>
