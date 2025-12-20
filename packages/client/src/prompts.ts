@@ -27,6 +27,7 @@ Available components:
 - {"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1}
 - {"component":"Image","src":"https://example.com/image.jpg","alt":"Description","fit":"cover"}
 - {"component":"Icon","name":"settings","size":24,"color":"#333"}
+- {"component":"Divider"} (horizontal line separator)
 
 OUTPUT ONLY THE JSON ARRAY NOW:`;
 }

@@ -8,6 +8,7 @@ export class CcButton extends LitElement {
   static styles = css`
     :host {
       display: inline-block;
+      align-self: flex-end;
     }
 
     button {
