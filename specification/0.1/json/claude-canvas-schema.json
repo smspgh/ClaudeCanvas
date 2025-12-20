@@ -1,0 +1,614 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/anthropics/claude-canvas/specification/0.1/json/claude-canvas-schema.json",
+  "title": "ClaudeCanvas Protocol v0.1",
+  "description": "A declarative UI protocol for Claude AI agents to generate rich, interactive user interfaces",
+  "definitions": {
+    "JsonPointer": {
+      "type": "string",
+      "description": "JSON Pointer path for data binding (e.g., '/user/name')",
+      "pattern": "^/.*$"
+    },
+    "SurfaceId": {
+      "type": "string",
+      "description": "Unique identifier for a UI surface"
+    },
+    "ComponentId": {
+      "type": "string",
+      "description": "Unique identifier for a component instance"
+    },
+    "FlexAlignment": {
+      "type": "string",
+      "enum": ["start", "center", "end", "stretch", "spaceBetween", "spaceAround"],
+      "description": "Flex alignment options for layout components"
+    },
+    "TextStyle": {
+      "type": "string",
+      "enum": ["heading1", "heading2", "heading3", "body", "caption", "code"],
+      "description": "Text styling presets"
+    },
+    "ButtonVariant": {
+      "type": "string",
+      "enum": ["primary", "secondary", "outline", "ghost", "danger"],
+      "description": "Button visual variants"
+    },
+    "InputType": {
+      "type": "string",
+      "enum": ["text", "email", "password", "number", "tel", "url", "search"],
+      "description": "Input field types"
+    },
+    "Spacing": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "object",
+          "properties": {
+            "top": { "type": "number" },
+            "right": { "type": "number" },
+            "bottom": { "type": "number" },
+            "left": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "ComponentStyle": {
+      "type": "object",
+      "description": "Common styling properties for all components",
+      "properties": {
+        "padding": { "$ref": "#/definitions/Spacing" },
+        "margin": { "$ref": "#/definitions/Spacing" },
+        "backgroundColor": { "type": "string" },
+        "borderRadius": { "type": "number" },
+        "borderColor": { "type": "string" },
+        "borderWidth": { "type": "number" },
+        "width": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+        "height": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+        "minWidth": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+        "maxWidth": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+        "flex": { "type": "number" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "description": "Represents a user-initiated action",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["submit", "navigate", "dismiss", "custom", "updateData", "update"],
+          "description": "The type of action to perform"
+        },
+        "event": {
+          "type": "string",
+          "description": "For custom actions, the event name to emit"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Data to include with the action"
+        },
+        "dataPath": {
+          "$ref": "#/definitions/JsonPointer",
+          "description": "JSON pointer to data to include"
+        },
+        "path": {
+          "$ref": "#/definitions/JsonPointer",
+          "description": "For update actions: path to update"
+        },
+        "value": {
+          "description": "For update actions: value to set"
+        }
+      }
+    },
+    "BaseComponent": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/definitions/ComponentId" },
+        "style": { "$ref": "#/definitions/ComponentStyle" },
+        "visibleIf": {
+          "$ref": "#/definitions/JsonPointer",
+          "description": "Conditional rendering based on data model"
+        }
+      }
+    },
+    "RowComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "children"],
+          "properties": {
+            "component": { "const": "Row" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Component" }
+            },
+            "gap": { "type": "number" },
+            "align": { "$ref": "#/definitions/FlexAlignment" },
+            "justify": { "$ref": "#/definitions/FlexAlignment" },
+            "wrap": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "ColumnComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "children"],
+          "properties": {
+            "component": { "const": "Column" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Component" }
+            },
+            "gap": { "type": "number" },
+            "align": { "$ref": "#/definitions/FlexAlignment" }
+          }
+        }
+      ]
+    },
+    "CardComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "children"],
+          "properties": {
+            "component": { "const": "Card" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Component" }
+            },
+            "elevated": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "DividerComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component"],
+          "properties": {
+            "component": { "const": "Divider" },
+            "vertical": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "ModalComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "openPath", "children"],
+          "properties": {
+            "component": { "const": "Modal" },
+            "openPath": { "$ref": "#/definitions/JsonPointer" },
+            "title": { "type": "string" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Component" }
+            },
+            "size": {
+              "type": "string",
+              "enum": ["small", "medium", "large", "fullscreen"]
+            },
+            "dismissible": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "TabsComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath", "tabs"],
+          "properties": {
+            "component": { "const": "Tabs" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "tabs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value", "children"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "disabled": { "type": "boolean" },
+                  "children": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/Component" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TextComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component"],
+          "properties": {
+            "component": { "const": "Text" },
+            "content": { "type": "string" },
+            "contentPath": { "$ref": "#/definitions/JsonPointer" },
+            "textStyle": { "$ref": "#/definitions/TextStyle" },
+            "color": { "type": "string" },
+            "markdown": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "ImageComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component"],
+          "properties": {
+            "component": { "const": "Image" },
+            "src": { "type": "string" },
+            "srcPath": { "$ref": "#/definitions/JsonPointer" },
+            "alt": { "type": "string" },
+            "fit": {
+              "type": "string",
+              "enum": ["cover", "contain", "fill", "none"]
+            }
+          }
+        }
+      ]
+    },
+    "IconComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "name"],
+          "properties": {
+            "component": { "const": "Icon" },
+            "name": { "type": "string" },
+            "size": { "type": "number" },
+            "color": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "TextFieldComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath"],
+          "properties": {
+            "component": { "const": "TextField" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "placeholder": { "type": "string" },
+            "inputType": { "$ref": "#/definitions/InputType" },
+            "required": { "type": "boolean" },
+            "disabled": { "type": "boolean" },
+            "multiline": { "type": "boolean" },
+            "rows": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "CheckboxComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath"],
+          "properties": {
+            "component": { "const": "Checkbox" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "disabled": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "SelectComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath", "options"],
+          "properties": {
+            "component": { "const": "Select" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "placeholder": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" }
+                }
+              }
+            },
+            "disabled": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "SliderComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath"],
+          "properties": {
+            "component": { "const": "Slider" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" },
+            "disabled": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "DateTimeInputComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath"],
+          "properties": {
+            "component": { "const": "DateTimeInput" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "enableDate": { "type": "boolean", "default": true },
+            "enableTime": { "type": "boolean", "default": false },
+            "minDate": { "type": "string", "format": "date" },
+            "maxDate": { "type": "string", "format": "date" },
+            "disabled": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "VideoComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component"],
+          "properties": {
+            "component": { "const": "Video" },
+            "src": { "type": "string", "format": "uri" },
+            "srcPath": { "$ref": "#/definitions/JsonPointer" },
+            "poster": { "type": "string", "format": "uri" },
+            "autoplay": { "type": "boolean" },
+            "controls": { "type": "boolean", "default": true },
+            "loop": { "type": "boolean" },
+            "muted": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "AudioPlayerComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component"],
+          "properties": {
+            "component": { "const": "AudioPlayer" },
+            "src": { "type": "string", "format": "uri" },
+            "srcPath": { "$ref": "#/definitions/JsonPointer" },
+            "title": { "type": "string" },
+            "autoplay": { "type": "boolean" },
+            "controls": { "type": "boolean", "default": true },
+            "loop": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "MultipleChoiceComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "valuePath", "options"],
+          "properties": {
+            "component": { "const": "MultipleChoice" },
+            "valuePath": { "$ref": "#/definitions/JsonPointer" },
+            "label": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" }
+                }
+              }
+            },
+            "maxSelections": { "type": "number" },
+            "disabled": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "ButtonComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "label", "action"],
+          "properties": {
+            "component": { "const": "Button" },
+            "label": { "type": "string" },
+            "variant": { "$ref": "#/definitions/ButtonVariant" },
+            "icon": { "type": "string" },
+            "disabled": { "type": "boolean" },
+            "loading": { "type": "boolean" },
+            "action": { "$ref": "#/definitions/Action" }
+          }
+        }
+      ]
+    },
+    "LinkComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "label"],
+          "properties": {
+            "component": { "const": "Link" },
+            "label": { "type": "string" },
+            "href": { "type": "string" },
+            "hrefPath": { "$ref": "#/definitions/JsonPointer" },
+            "external": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "ListComponent": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseComponent" },
+        {
+          "type": "object",
+          "required": ["component", "itemsPath", "itemTemplate"],
+          "properties": {
+            "component": { "const": "List" },
+            "itemsPath": { "$ref": "#/definitions/JsonPointer" },
+            "itemTemplate": { "$ref": "#/definitions/Component" },
+            "emptyMessage": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "Component": {
+      "oneOf": [
+        { "$ref": "#/definitions/RowComponent" },
+        { "$ref": "#/definitions/ColumnComponent" },
+        { "$ref": "#/definitions/CardComponent" },
+        { "$ref": "#/definitions/DividerComponent" },
+        { "$ref": "#/definitions/ModalComponent" },
+        { "$ref": "#/definitions/TabsComponent" },
+        { "$ref": "#/definitions/TextComponent" },
+        { "$ref": "#/definitions/ImageComponent" },
+        { "$ref": "#/definitions/IconComponent" },
+        { "$ref": "#/definitions/TextFieldComponent" },
+        { "$ref": "#/definitions/CheckboxComponent" },
+        { "$ref": "#/definitions/SelectComponent" },
+        { "$ref": "#/definitions/SliderComponent" },
+        { "$ref": "#/definitions/DateTimeInputComponent" },
+        { "$ref": "#/definitions/VideoComponent" },
+        { "$ref": "#/definitions/AudioPlayerComponent" },
+        { "$ref": "#/definitions/MultipleChoiceComponent" },
+        { "$ref": "#/definitions/ButtonComponent" },
+        { "$ref": "#/definitions/LinkComponent" },
+        { "$ref": "#/definitions/ListComponent" }
+      ]
+    },
+    "Surface": {
+      "type": "object",
+      "required": ["id", "components"],
+      "properties": {
+        "id": { "$ref": "#/definitions/SurfaceId" },
+        "title": { "type": "string" },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Component" }
+        }
+      }
+    },
+    "DataModel": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "SurfaceUpdateMessage": {
+      "type": "object",
+      "required": ["type", "surface"],
+      "properties": {
+        "type": { "const": "surfaceUpdate" },
+        "surface": { "$ref": "#/definitions/Surface" }
+      }
+    },
+    "DataModelUpdateMessage": {
+      "type": "object",
+      "required": ["type", "path", "data"],
+      "properties": {
+        "type": { "const": "dataModelUpdate" },
+        "path": { "$ref": "#/definitions/JsonPointer" },
+        "data": {}
+      }
+    },
+    "DeleteSurfaceMessage": {
+      "type": "object",
+      "required": ["type", "surfaceId"],
+      "properties": {
+        "type": { "const": "deleteSurface" },
+        "surfaceId": { "$ref": "#/definitions/SurfaceId" }
+      }
+    },
+    "BeginRenderingMessage": {
+      "type": "object",
+      "required": ["type", "surfaceId"],
+      "properties": {
+        "type": { "const": "beginRendering" },
+        "surfaceId": { "$ref": "#/definitions/SurfaceId" }
+      }
+    },
+    "AgentToClientMessage": {
+      "oneOf": [
+        { "$ref": "#/definitions/SurfaceUpdateMessage" },
+        { "$ref": "#/definitions/DataModelUpdateMessage" },
+        { "$ref": "#/definitions/DeleteSurfaceMessage" },
+        { "$ref": "#/definitions/BeginRenderingMessage" }
+      ]
+    },
+    "UserActionMessage": {
+      "type": "object",
+      "required": ["type", "surfaceId", "action", "dataModel"],
+      "properties": {
+        "type": { "const": "userAction" },
+        "surfaceId": { "$ref": "#/definitions/SurfaceId" },
+        "componentId": { "$ref": "#/definitions/ComponentId" },
+        "action": { "$ref": "#/definitions/Action" },
+        "dataModel": { "$ref": "#/definitions/DataModel" }
+      }
+    },
+    "ClientCapabilitiesMessage": {
+      "type": "object",
+      "required": ["type", "supportedComponents"],
+      "properties": {
+        "type": { "const": "clientCapabilities" },
+        "supportedComponents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "supportsMarkdown": { "type": "boolean" },
+        "supportsStreaming": { "type": "boolean" }
+      }
+    },
+    "ClientToAgentMessage": {
+      "oneOf": [
+        { "$ref": "#/definitions/UserActionMessage" },
+        { "$ref": "#/definitions/ClientCapabilitiesMessage" }
+      ]
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/AgentToClientMessage" },
+    { "$ref": "#/definitions/ClientToAgentMessage" }
+  ]
+}

@@ -202,6 +202,66 @@ export interface SliderComponent extends BaseComponent {
   disabled?: boolean;
 }
 
+export interface DateTimeInputComponent extends BaseComponent {
+  component: 'DateTimeInput';
+  valuePath: JsonPointer;
+  label?: string;
+  /** Enable date selection (default: true) */
+  enableDate?: boolean;
+  /** Enable time selection (default: false) */
+  enableTime?: boolean;
+  /** Minimum selectable date (ISO format) */
+  minDate?: string;
+  /** Maximum selectable date (ISO format) */
+  maxDate?: string;
+  disabled?: boolean;
+}
+
+export interface VideoComponent extends BaseComponent {
+  component: 'Video';
+  /** Video source URL */
+  src?: string;
+  /** JSON pointer to dynamic video source */
+  srcPath?: JsonPointer;
+  /** Poster image URL */
+  poster?: string;
+  /** Auto-play video */
+  autoplay?: boolean;
+  /** Show video controls (default: true) */
+  controls?: boolean;
+  /** Loop video playback */
+  loop?: boolean;
+  /** Mute video audio */
+  muted?: boolean;
+}
+
+export interface AudioPlayerComponent extends BaseComponent {
+  component: 'AudioPlayer';
+  /** Audio source URL */
+  src?: string;
+  /** JSON pointer to dynamic audio source */
+  srcPath?: JsonPointer;
+  /** Title/description of the audio */
+  title?: string;
+  /** Auto-play audio */
+  autoplay?: boolean;
+  /** Show audio controls (default: true) */
+  controls?: boolean;
+  /** Loop audio playback */
+  loop?: boolean;
+}
+
+export interface MultipleChoiceComponent extends BaseComponent {
+  component: 'MultipleChoice';
+  /** JSON pointer to array of selected values */
+  valuePath: JsonPointer;
+  label?: string;
+  options: Array<{ label: string; value: string }>;
+  /** Maximum number of selections allowed */
+  maxSelections?: number;
+  disabled?: boolean;
+}
+
 // Interactive Components
 export interface ButtonComponent extends BaseComponent {
   component: 'Button';
@@ -246,6 +306,10 @@ export type Component =
   | CheckboxComponent
   | SelectComponent
   | SliderComponent
+  | DateTimeInputComponent
+  | VideoComponent
+  | AudioPlayerComponent
+  | MultipleChoiceComponent
   | ButtonComponent
   | LinkComponent
   | ListComponent;

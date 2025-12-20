@@ -132,6 +132,18 @@ export class CcSurface extends LitElement {
       case 'Slider':
         return html`<cc-slider .component=${component} .dataModel=${this.dataModel}></cc-slider>`;
 
+      case 'DateTimeInput':
+        return html`<cc-datetime-input .component=${component} .dataModel=${this.dataModel}></cc-datetime-input>`;
+
+      case 'Video':
+        return html`<cc-video .component=${component} .dataModel=${this.dataModel}></cc-video>`;
+
+      case 'AudioPlayer':
+        return html`<cc-audio-player .component=${component} .dataModel=${this.dataModel}></cc-audio-player>`;
+
+      case 'MultipleChoice':
+        return html`<cc-multiple-choice .component=${component} .dataModel=${this.dataModel}></cc-multiple-choice>`;
+
       case 'Image':
         return html`<cc-image .component=${component} .dataModel=${this.dataModel}></cc-image>`;
 

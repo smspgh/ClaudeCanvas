@@ -15,6 +15,10 @@ import { CcTextField } from './components/CcTextField.js';
 import { CcCheckbox } from './components/CcCheckbox.js';
 import { CcSelect } from './components/CcSelect.js';
 import { CcSlider } from './components/CcSlider.js';
+import { CcDateTimeInput } from './components/CcDateTimeInput.js';
+import { CcVideo } from './components/CcVideo.js';
+import { CcAudioPlayer } from './components/CcAudioPlayer.js';
+import { CcMultipleChoice } from './components/CcMultipleChoice.js';
 import { CcImage } from './components/CcImage.js';
 import { CcIcon } from './components/CcIcon.js';
 import { CcRow } from './components/CcRow.js';
@@ -137,6 +141,32 @@ export function CcSurface({
       case 'Slider':
         return (
           <CcSlider
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          />
+        );
+
+      case 'DateTimeInput':
+        return (
+          <CcDateTimeInput
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          />
+        );
+
+      case 'Video':
+        return <CcVideo key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'AudioPlayer':
+        return <CcAudioPlayer key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'MultipleChoice':
+        return (
+          <CcMultipleChoice
             key={componentKey}
             component={component}
             dataModel={dataModel}

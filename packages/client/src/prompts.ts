@@ -22,6 +22,11 @@ TextField: {"component":"TextField","valuePath":"/form/name","label":"Name","pla
 Button: {"component":"Button","label":"Submit","variant":"primary","action":{"type":"submit"}}
 Checkbox: {"component":"Checkbox","valuePath":"/form/checked","label":"Check"}
 Select: {"component":"Select","valuePath":"/form/choice","label":"Choose","options":[{"label":"A","value":"a"}]}
+Slider: {"component":"Slider","valuePath":"/form/value","label":"Value","min":0,"max":100}
+DateTimeInput: {"component":"DateTimeInput","valuePath":"/form/date","label":"Date","enableDate":true,"enableTime":false}
+MultipleChoice: {"component":"MultipleChoice","valuePath":"/form/selected","label":"Select","options":[{"label":"A","value":"a"}]}
+Video: {"component":"Video","src":"https://...","controls":true}
+AudioPlayer: {"component":"AudioPlayer","src":"https://...","title":"Audio"}
 Modal: {"component":"Modal","openPath":"/ui/showModal","title":"Title","children":[...]}
 Tabs: {"component":"Tabs","valuePath":"/ui/tab","tabs":[{"label":"Tab1","value":"t1","children":[...]}]}
 Divider: {"component":"Divider"}

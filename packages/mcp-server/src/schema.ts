@@ -53,6 +53,22 @@ export const COMPONENT_CATALOG = `
 - **Slider**: Numeric range input
   \`{"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1}\`
 
+- **DateTimeInput**: Date and/or time picker
+  \`{"component":"DateTimeInput","valuePath":"/form/date","label":"Select Date","enableDate":true,"enableTime":false,"minDate":"2024-01-01","maxDate":"2025-12-31"}\`
+  For datetime: \`{"component":"DateTimeInput","valuePath":"/form/datetime","label":"When","enableDate":true,"enableTime":true}\`
+
+- **MultipleChoice**: Multi-select options (checkboxes)
+  \`{"component":"MultipleChoice","valuePath":"/form/selectedItems","label":"Select items","options":[{"label":"Option A","value":"a"},{"label":"Option B","value":"b"}],"maxSelections":3}\`
+
+### Media Components
+- **Video**: Video player with controls
+  \`{"component":"Video","src":"https://...video.mp4","poster":"https://...thumbnail.jpg","controls":true,"autoplay":false,"loop":false,"muted":false}\`
+  Use \`srcPath\` for dynamic src: \`{"component":"Video","srcPath":"/media/videoUrl"}\`
+
+- **AudioPlayer**: Audio player with controls
+  \`{"component":"AudioPlayer","src":"https://...audio.mp3","title":"Track Name","controls":true,"autoplay":false,"loop":false}\`
+  Use \`srcPath\` for dynamic src: \`{"component":"AudioPlayer","srcPath":"/media/audioUrl","title":"Now Playing"}\`
+
 ### Interactive Components
 - **Button**: Clickable button with action
   \`{"component":"Button","label":"Submit","variant":"primary|secondary|outline|ghost|danger","icon":"send","action":{"type":"submit"}}\`
