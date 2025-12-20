@@ -4,22 +4,73 @@
  * Uses your Claude Code subscription - no API key required!
  */
 
-import { spawn } from 'child_process';
+import { execSync } from 'child_process';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 import type {
   AgentToClientMessage,
   UserActionMessage,
   Surface,
   DataModel,
 } from '@claude-canvas/core';
-import { getSystemPrompt } from './prompts.js';
+import { getCompactPrompt } from './prompts.js';
+
+/**
+ * Find the claude CLI executable path
+ * Checks common installation locations on Windows
+ */
+function findClaudeCLI(): string {
+  const home = homedir();
+  const username = home.split(/[/\\]/).pop() || '';
+
+  // Common installation paths on Windows
+  const possiblePaths = [
+    // Custom npm global at C:\home\username\.npm-global (your setup)
+    `C:\\home\\${username}\\.npm-global\\claude.cmd`,
+    // Also check with 'h' suffix variant
+    `C:\\home\\${username}h\\.npm-global\\claude.cmd`,
+    // Standard npm global on Windows (AppData\Roaming\npm)
+    join(process.env.APPDATA || '', 'npm', 'claude.cmd'),
+    // pnpm global
+    join(home, 'AppData', 'Local', 'pnpm', 'claude.cmd'),
+    // User's home npm-global
+    join(home, '.npm-global', 'claude.cmd'),
+    // Local AppData npm
+    join(home, 'AppData', 'Local', 'npm', 'claude.cmd'),
+  ];
+
+  console.log('[ClaudeCanvas] Searching for claude CLI in:', possiblePaths);
+
+  for (const p of possiblePaths) {
+    if (existsSync(p)) {
+      console.log(`[ClaudeCanvas] Found claude CLI at: ${p}`);
+      return p;
+    }
+  }
+
+  // Fallback to just 'claude' and hope PATH is correct
+  console.log('[ClaudeCanvas] Using claude from PATH');
+  return 'claude';
+}
+
+// Cache the claude path
+let claudePath: string | null = null;
+
+function getClaudePath(): string {
+  if (!claudePath) {
+    claudePath = findClaudeCLI();
+  }
+  return claudePath;
+}
 
 export interface ClaudeCanvasAgentOptions {
   /** Working directory for Claude Code */
   cwd?: string;
   /** Model to use (defaults to sonnet) */
   model?: 'sonnet' | 'opus' | 'haiku';
-  /** Custom system prompt to append */
-  customPrompt?: string;
+  /** Custom path to claude CLI executable */
+  claudePath?: string;
 }
 
 export interface GenerateUIOptions {
@@ -38,38 +89,26 @@ export interface ConversationMessage {
 
 export class ClaudeCanvasAgent {
   private options: ClaudeCanvasAgentOptions;
-  private systemPrompt: string;
   private conversationHistory: ConversationMessage[] = [];
 
   constructor(options: ClaudeCanvasAgentOptions = {}) {
     this.options = options;
-    this.systemPrompt = getSystemPrompt() + (options.customPrompt ? '\n\n' + options.customPrompt : '');
   }
 
   /**
    * Generate UI based on a user prompt using Claude Code CLI
    */
   async generateUI(options: GenerateUIOptions): Promise<AgentToClientMessage[]> {
-    const { prompt, dataModel, currentSurface } = options;
+    const { prompt } = options;
 
-    // Build context
-    let contextInfo = '';
-    if (dataModel && Object.keys(dataModel).length > 0) {
-      contextInfo += `\nCurrent data model:\n\`\`\`json\n${JSON.stringify(dataModel, null, 2)}\n\`\`\`\n`;
-    }
-    if (currentSurface) {
-      contextInfo += `\nCurrent surface:\n\`\`\`json\n${JSON.stringify(currentSurface, null, 2)}\n\`\`\`\n`;
-    }
-
-    const userMessage = contextInfo
-      ? `${prompt}\n\n---\nContext:${contextInfo}`
-      : prompt;
+    // Build the full prompt with instructions embedded
+    const fullPrompt = getCompactPrompt(prompt);
 
     // Add to conversation history
-    this.conversationHistory.push({ role: 'user', content: userMessage });
+    this.conversationHistory.push({ role: 'user', content: prompt });
 
     try {
-      const responseText = await this.callClaudeCLI(userMessage);
+      const responseText = this.callClaudeCLI(fullPrompt);
 
       // Add assistant response to history
       this.conversationHistory.push({ role: 'assistant', content: responseText });
@@ -84,62 +123,53 @@ export class ClaudeCanvasAgent {
   }
 
   /**
-   * Call Claude Code CLI with the given prompt
+   * Call Claude Code CLI with the given prompt (synchronous for reliability)
    */
-  private callClaudeCLI(userPrompt: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      // Build CLI arguments
-      const args = ['-p', userPrompt, '--output-format', 'text'];
+  private callClaudeCLI(fullPrompt: string): string {
+    const cliPath = this.options.claudePath || getClaudePath();
+    console.log(`[ClaudeCanvas] Calling Claude CLI at: ${cliPath}`);
 
-      // Add system prompt
-      args.push('--system-prompt', this.systemPrompt);
+    // Escape the prompt for shell - more aggressive escaping for cmd.exe
+    const escapedPrompt = fullPrompt
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, '');
 
-      // Add model if specified
-      if (this.options.model) {
-        args.push('--model', this.options.model);
-      }
+    // Build command with full path
+    // Use --tools "" to disable tools (pure text generation)
+    // Use --output-format text for simple text output
+    let cmd = `"${cliPath}" -p "${escapedPrompt}" --output-format text --tools ""`;
 
-      const cliOptions: { shell: boolean; cwd?: string } = { shell: true };
-      if (this.options.cwd) {
-        cliOptions.cwd = this.options.cwd;
-      }
+    if (this.options.model) {
+      cmd += ` --model ${this.options.model}`;
+    }
 
-      const claude = spawn('claude', args, cliOptions);
+    console.log('[ClaudeCanvas] Command:', cmd.substring(0, 200) + '...');
 
-      let stdout = '';
-      let stderr = '';
-
-      claude.stdout.on('data', (data: Buffer) => {
-        stdout += data.toString();
+    try {
+      const result = execSync(cmd, {
+        encoding: 'utf-8' as BufferEncoding,
+        maxBuffer: 10 * 1024 * 1024, // 10MB
+        timeout: 120000, // 2 minute timeout
+        cwd: this.options.cwd,
+        shell: 'cmd.exe',
       });
 
-      claude.stderr.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      claude.on('close', (code: number) => {
-        if (code !== 0) {
-          reject(new Error(`Claude CLI exited with code ${code}: ${stderr}`));
-          return;
-        }
-        resolve(stdout);
-      });
-
-      claude.on('error', (error: Error) => {
-        reject(new Error(`Failed to spawn Claude CLI: ${error.message}`));
-      });
-    });
+      console.log('[ClaudeCanvas] CLI response received');
+      console.log('[ClaudeCanvas] Response preview:', result.substring(0, 200));
+      return result;
+    } catch (error) {
+      console.error('[ClaudeCanvas] CLI error:', error);
+      throw error;
+    }
   }
 
   /**
    * Handle a user action and generate appropriate response
    */
   async handleUserAction(action: UserActionMessage): Promise<AgentToClientMessage[]> {
-    const prompt = `User performed action: ${JSON.stringify(action.action)}
-Current data model: ${JSON.stringify(action.dataModel)}
-
-Respond appropriately to this action. If it's a submit action, acknowledge the submission. If it's a custom action, handle it based on the event name.`;
-
+    const prompt = `User clicked submit. Respond with a success message UI.`;
     return this.generateUI({ prompt, dataModel: action.dataModel });
   }
 
@@ -149,7 +179,15 @@ Respond appropriately to this action. If it's a submit action, acknowledge the s
   private parseMessages(responseText: string): AgentToClientMessage[] {
     // Try to extract JSON from the response
     const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-    const jsonString = jsonMatch ? jsonMatch[1] : responseText;
+    let jsonString = jsonMatch ? jsonMatch[1] : responseText;
+
+    // Also try to find raw JSON array
+    if (!jsonMatch) {
+      const arrayMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (arrayMatch) {
+        jsonString = arrayMatch[0];
+      }
+    }
 
     try {
       const parsed = JSON.parse(jsonString.trim());
@@ -162,7 +200,7 @@ Respond appropriately to this action. If it's a submit action, acknowledge the s
       }
     } catch (error) {
       console.error('Failed to parse Claude response as JSON:', error);
-      console.error('Response was:', responseText);
+      console.error('Response was:', responseText.substring(0, 500));
 
       // Return a fallback error surface
       return [
@@ -174,7 +212,7 @@ Respond appropriately to this action. If it's a submit action, acknowledge the s
             components: [
               {
                 component: 'Text',
-                content: 'Failed to generate UI. Please try again.',
+                content: 'Failed to parse UI response. Raw: ' + responseText.substring(0, 200),
                 textStyle: 'body',
               },
             ],
@@ -202,56 +240,41 @@ Respond appropriately to this action. If it's a submit action, acknowledge the s
 /**
  * Generate UI using Claude Code CLI directly (standalone function)
  */
-export async function generateUIViaCLI(
+export function generateUIViaCLI(
   prompt: string,
-  options: { systemPrompt?: string; model?: string; cwd?: string } = {}
-): Promise<AgentToClientMessage[]> {
-  const systemPrompt = options.systemPrompt ?? getSystemPrompt();
+  options: { model?: string; cwd?: string; claudePath?: string } = {}
+): AgentToClientMessage[] {
+  const cliPath = options.claudePath || getClaudePath();
+  const fullPrompt = getCompactPrompt(prompt);
+  const escapedPrompt = fullPrompt
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, '');
 
-  return new Promise((resolve, reject) => {
-    const args = ['-p', prompt, '--output-format', 'text', '--system-prompt', systemPrompt];
+  let cmd = `"${cliPath}" -p "${escapedPrompt}" --output-format text --tools ""`;
+  if (options.model) {
+    cmd += ` --model ${options.model}`;
+  }
 
-    if (options.model) {
-      args.push('--model', options.model);
-    }
-
-    const cliOptions: { shell: boolean; cwd?: string } = { shell: true };
-    if (options.cwd) {
-      cliOptions.cwd = options.cwd;
-    }
-
-    const claude = spawn('claude', args, cliOptions);
-
-    let stdout = '';
-    let stderr = '';
-
-    claude.stdout.on('data', (data: Buffer) => {
-      stdout += data.toString();
-    });
-
-    claude.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
-    });
-
-    claude.on('close', (code: number) => {
-      if (code !== 0) {
-        reject(new Error(`Claude CLI exited with code ${code}: ${stderr}`));
-        return;
-      }
-
-      // Parse the response
-      try {
-        const jsonMatch = stdout.match(/```json\s*([\s\S]*?)\s*```/);
-        const jsonString = jsonMatch ? jsonMatch[1] : stdout;
-        const parsed = JSON.parse(jsonString.trim());
-        resolve(Array.isArray(parsed) ? parsed : [parsed]);
-      } catch (error) {
-        reject(new Error(`Failed to parse response: ${error}`));
-      }
-    });
-
-    claude.on('error', (error: Error) => {
-      reject(new Error(`Failed to spawn Claude CLI: ${error.message}`));
-    });
+  const result = execSync(cmd, {
+    encoding: 'utf-8' as BufferEncoding,
+    maxBuffer: 10 * 1024 * 1024,
+    timeout: 120000,
+    cwd: options.cwd,
+    shell: 'cmd.exe',
   });
+
+  const jsonMatch = result.match(/```json\s*([\s\S]*?)\s*```/);
+  let jsonString = jsonMatch ? jsonMatch[1] : result;
+
+  if (!jsonMatch) {
+    const arrayMatch = result.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (arrayMatch) {
+      jsonString = arrayMatch[0];
+    }
+  }
+
+  const parsed = JSON.parse(jsonString.trim());
+  return Array.isArray(parsed) ? parsed : [parsed];
 }
