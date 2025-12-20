@@ -9,5 +9,8 @@ export * from './types.js';
 // Utilities
 export * from './utils.js';
 
+// Streaming
+export * from './streaming.js';
+
 // Schemas
 export * from './schemas/index.js';

@@ -4,7 +4,7 @@
  * Uses your Claude Code subscription - no API key required!
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -14,6 +14,7 @@ import type {
   Surface,
   DataModel,
 } from '@claude-canvas/core';
+import { StreamingJsonParser, parseMessages } from '@claude-canvas/core';
 import { getCompactPrompt } from './prompts.js';
 
 /**
@@ -80,6 +81,10 @@ export interface GenerateUIOptions {
   dataModel?: DataModel;
   /** Optional context about the current surface */
   currentSurface?: Surface;
+  /** Enable streaming mode for progressive UI updates */
+  streaming?: boolean;
+  /** Callback for streaming messages */
+  onMessage?: (message: AgentToClientMessage) => void;
 }
 
 export interface ConversationMessage {
@@ -99,7 +104,7 @@ export class ClaudeCanvasAgent {
    * Generate UI based on a user prompt using Claude Code CLI
    */
   async generateUI(options: GenerateUIOptions): Promise<AgentToClientMessage[]> {
-    const { prompt } = options;
+    const { prompt, streaming = false, onMessage } = options;
 
     // Build the full prompt with instructions embedded
     const fullPrompt = getCompactPrompt(prompt);
@@ -108,14 +113,18 @@ export class ClaudeCanvasAgent {
     this.conversationHistory.push({ role: 'user', content: prompt });
 
     try {
-      const responseText = this.callClaudeCLI(fullPrompt);
-
-      // Add assistant response to history
-      this.conversationHistory.push({ role: 'assistant', content: responseText });
-
-      // Parse the JSON from the response
-      const messages = this.parseMessages(responseText);
-      return messages;
+      if (streaming && onMessage) {
+        // Use streaming mode
+        const responseText = await this.callClaudeCLIStreaming(fullPrompt, onMessage);
+        this.conversationHistory.push({ role: 'assistant', content: responseText });
+        return this.parseMessages(responseText);
+      } else {
+        // Use synchronous mode
+        const responseText = this.callClaudeCLI(fullPrompt);
+        this.conversationHistory.push({ role: 'assistant', content: responseText });
+        const messages = this.parseMessages(responseText);
+        return messages;
+      }
     } catch (error) {
       console.error('Error generating UI:', error);
       throw error;
@@ -166,6 +175,73 @@ export class ClaudeCanvasAgent {
   }
 
   /**
+   * Call Claude Code CLI with streaming support for progressive updates
+   */
+  private callClaudeCLIStreaming(
+    fullPrompt: string,
+    onMessage: (message: AgentToClientMessage) => void
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const cliPath = this.options.claudePath || getClaudePath();
+      console.log(`[ClaudeCanvas] Calling Claude CLI (streaming) at: ${cliPath}`);
+
+      // Build arguments for spawn
+      const args = [
+        '-p',
+        fullPrompt,
+        '--output-format',
+        'text',
+        '--tools',
+        '',
+      ];
+
+      if (this.options.model) {
+        args.push('--model', this.options.model);
+      }
+
+      const child = spawn(cliPath, args, {
+        cwd: this.options.cwd,
+        shell: true,
+      });
+
+      let fullOutput = '';
+      const parser = new StreamingJsonParser({
+        onMessage: (msg) => {
+          console.log('[ClaudeCanvas] Streaming message:', msg.type);
+          onMessage(msg);
+        },
+        onError: (err) => {
+          console.warn('[ClaudeCanvas] Streaming parse error:', err.message);
+        },
+      });
+
+      child.stdout.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        fullOutput += chunk;
+        parser.feed(chunk);
+      });
+
+      child.stderr.on('data', (data: Buffer) => {
+        console.error('[ClaudeCanvas] CLI stderr:', data.toString());
+      });
+
+      child.on('close', (code) => {
+        parser.finish();
+        if (code === 0) {
+          console.log('[ClaudeCanvas] CLI streaming complete');
+          resolve(fullOutput);
+        } else {
+          reject(new Error(`Claude CLI exited with code ${code}`));
+        }
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
    * Handle a user action and generate appropriate response
    */
   async handleUserAction(action: UserActionMessage): Promise<AgentToClientMessage[]> {
@@ -177,27 +253,8 @@ export class ClaudeCanvasAgent {
    * Parse messages from Claude's response
    */
   private parseMessages(responseText: string): AgentToClientMessage[] {
-    // Try to extract JSON from the response
-    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-    let jsonString = jsonMatch ? jsonMatch[1] : responseText;
-
-    // Also try to find raw JSON array
-    if (!jsonMatch) {
-      const arrayMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-      if (arrayMatch) {
-        jsonString = arrayMatch[0];
-      }
-    }
-
     try {
-      const parsed = JSON.parse(jsonString.trim());
-
-      // Handle both array and single message responses
-      if (Array.isArray(parsed)) {
-        return parsed as AgentToClientMessage[];
-      } else {
-        return [parsed] as AgentToClientMessage[];
-      }
+      return parseMessages(responseText);
     } catch (error) {
       console.error('Failed to parse Claude response as JSON:', error);
       console.error('Response was:', responseText.substring(0, 500));
@@ -265,16 +322,5 @@ export function generateUIViaCLI(
     shell: 'cmd.exe',
   });
 
-  const jsonMatch = result.match(/```json\s*([\s\S]*?)\s*```/);
-  let jsonString = jsonMatch ? jsonMatch[1] : result;
-
-  if (!jsonMatch) {
-    const arrayMatch = result.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (arrayMatch) {
-      jsonString = arrayMatch[0];
-    }
-  }
-
-  const parsed = JSON.parse(jsonString.trim());
-  return Array.isArray(parsed) ? parsed : [parsed];
+  return parseMessages(result);
 }

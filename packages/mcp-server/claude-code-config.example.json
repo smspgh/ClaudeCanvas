@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "claude-canvas": {
+      "command": "node",
+      "args": ["C:/coding_projects/ClaudeCanvas/packages/mcp-server/dist/cli.js"],
+      "description": "ClaudeCanvas MCP server for generating declarative UI"
+    }
+  }
+}
