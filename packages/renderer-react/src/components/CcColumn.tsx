@@ -13,13 +13,13 @@ function getFlexAlign(align?: string): string {
     case 'end': return 'flex-end';
     case 'center': return 'center';
     case 'stretch': return 'stretch';
-    default: return 'stretch';
+    default: return 'flex-start';
   }
 }
 
 export function CcColumn({ component, children }: CcColumnProps) {
   const style: React.CSSProperties = {
-    gap: component.gap ?? 8,
+    gap: component.gap ?? 0,
     alignItems: getFlexAlign(component.align),
   };
 

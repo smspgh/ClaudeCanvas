@@ -183,26 +183,36 @@
         <div id="server-status" style="font-size: 0.875rem; margin-top: 0.5rem;">Checking server...</div>
       </header>
 
+      <div class="panel" style="margin-bottom: 2rem">
+        <div class="panel-header">Describe Your UI</div>
+        <div class="panel-content">
+          <div class="input-area">
+            <textarea id="prompt" placeholder="Example: Create a settings form with a volume slider, theme dropdown, and notification checkboxes"></textarea>
+            <button id="generate">Generate UI</button>
+          </div>
+        </div>
+      </div>
+
       <div class="main-content">
         <div class="panel">
-          <div class="panel-header">Describe Your UI</div>
+          <div class="panel-header">Lit Renderer</div>
           <div class="panel-content">
-            <div class="input-area">
-              <textarea id="prompt" placeholder="Example: Create a login form with email and password fields, a remember me checkbox, and a submit button"></textarea>
-              <button id="generate">Generate UI</button>
+            <cc-surface id="surface-lit"></cc-surface>
+            <div id="empty-state-lit" class="empty-state">
+              Enter a prompt to see the Lit renderer
+            </div>
+            <div id="loading" class="loading" style="display: none">
+              Generating UI...
             </div>
           </div>
         </div>
 
         <div class="panel">
-          <div class="panel-header">Generated UI</div>
+          <div class="panel-header">React Renderer</div>
           <div class="panel-content">
-            <cc-surface id="surface"></cc-surface>
-            <div id="empty-state" class="empty-state">
-              Enter a prompt and click Generate to see your UI
-            </div>
-            <div id="loading" class="loading" style="display: none">
-              Generating UI...
+            <div id="surface-react"></div>
+            <div id="empty-state-react" class="empty-state">
+              Enter a prompt to see the React renderer
             </div>
           </div>
         </div>

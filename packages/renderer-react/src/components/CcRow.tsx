@@ -7,7 +7,7 @@ export interface CcRowProps {
   children?: ReactNode;
 }
 
-function getFlexAlign(align?: string): string {
+function getFlexAlign(align?: string, defaultValue = 'stretch'): string {
   switch (align) {
     case 'start': return 'flex-start';
     case 'end': return 'flex-end';
@@ -15,15 +15,15 @@ function getFlexAlign(align?: string): string {
     case 'stretch': return 'stretch';
     case 'spaceBetween': return 'space-between';
     case 'spaceAround': return 'space-around';
-    default: return 'center';
+    default: return defaultValue;
   }
 }
 
 export function CcRow({ component, children }: CcRowProps) {
   const style: React.CSSProperties = {
-    gap: component.gap ?? 8,
-    alignItems: getFlexAlign(component.align),
-    justifyContent: getFlexAlign(component.justify),
+    gap: component.gap ?? 0,
+    alignItems: getFlexAlign(component.align, 'stretch'),
+    justifyContent: getFlexAlign(component.justify, 'flex-start'),
   };
 
   return (
