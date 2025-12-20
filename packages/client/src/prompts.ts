@@ -7,31 +7,28 @@
  * This avoids Windows command line length limits
  */
 export function getCompactPrompt(userRequest: string): string {
-  return `IMPORTANT: You are a JSON-only UI generator. Output ONLY valid JSON, no text, no markdown, no explanations.
+  return `You are a ClaudeCanvas UI generator. Output ONLY a JSON array. No text, no markdown, no explanations.
 
-Generate a UI for: "${userRequest}"
+REQUEST: ${userRequest}
 
-Output format (JSON array only):
-[{"type":"dataModelUpdate","path":"/","data":{}},{"type":"surfaceUpdate","surface":{"id":"main","title":"Title","components":[...]}}]
+FORMAT: [{"type":"dataModelUpdate","path":"/","data":{"form":{}}},{"type":"surfaceUpdate","surface":{"id":"main","title":"Title","components":[...]}}]
 
-Available components:
-- {"component":"Card","elevated":true,"children":[...]}
-- {"component":"Column","gap":12,"children":[...]}
-- {"component":"Row","gap":12,"children":[...]}
-- {"component":"Text","content":"text","textStyle":"heading2"}
-- {"component":"Text","content":"text","textStyle":"body"}
-- {"component":"TextField","valuePath":"/form/name","label":"Name","placeholder":"Enter name"}
-- {"component":"Button","label":"Submit","variant":"primary","action":{"type":"submit"}}
-- {"component":"Checkbox","valuePath":"/form/checked","label":"Check me"}
-- {"component":"Select","valuePath":"/form/country","label":"Country","options":[{"label":"USA","value":"us"},{"label":"UK","value":"uk"}]}
-- {"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1}
-- {"component":"Image","src":"https://example.com/image.jpg","alt":"Description","fit":"cover"}
-- {"component":"Icon","name":"settings","size":24,"color":"#333"}
-- {"component":"Divider"} (horizontal line separator)
-- {"component":"Modal","openPath":"/ui/showModal","title":"Dialog Title","size":"medium","dismissible":true,"children":[...]}
-- {"component":"Tabs","valuePath":"/ui/activeTab","tabs":[{"label":"Tab 1","value":"tab1","children":[...]},{"label":"Tab 2","value":"tab2","children":[...]}]}
+COMPONENTS:
+Card: {"component":"Card","elevated":true,"children":[...]}
+Column: {"component":"Column","gap":12,"children":[...]}
+Row: {"component":"Row","gap":12,"children":[...]}
+Text: {"component":"Text","content":"text","textStyle":"heading2"} (or body, caption)
+TextField: {"component":"TextField","valuePath":"/form/name","label":"Name","placeholder":"Enter"}
+Button: {"component":"Button","label":"Submit","variant":"primary","action":{"type":"submit"}}
+Checkbox: {"component":"Checkbox","valuePath":"/form/checked","label":"Check"}
+Select: {"component":"Select","valuePath":"/form/choice","label":"Choose","options":[{"label":"A","value":"a"}]}
+Modal: {"component":"Modal","openPath":"/ui/showModal","title":"Title","children":[...]}
+Tabs: {"component":"Tabs","valuePath":"/ui/tab","tabs":[{"label":"Tab1","value":"t1","children":[...]}]}
+Divider: {"component":"Divider"}
 
-OUTPUT ONLY THE JSON ARRAY NOW:`;
+Modal open button: {"component":"Button","label":"Open","action":{"type":"update","path":"/ui/showModal","value":true}}
+
+OUTPUT JSON ARRAY NOW:`;
 }
 
 /**

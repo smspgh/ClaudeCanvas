@@ -143,12 +143,19 @@ export class ClaudeCanvasAgent {
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')
       .replace(/\n/g, ' ')
-      .replace(/\r/g, '');
+      .replace(/\r/g, '')
+      .replace(/\|/g, '^|')  // Escape pipe for cmd.exe
+      .replace(/&/g, '^&')   // Escape ampersand for cmd.exe
+      .replace(/</g, '^<')   // Escape less than
+      .replace(/>/g, '^>')   // Escape greater than
+      .replace(/%/g, '%%');  // Escape percent
 
     // Build command with full path
     // Use --tools "" to disable tools (pure text generation)
     // Use --output-format text for simple text output
-    let cmd = `"${cliPath}" -p "${escapedPrompt}" --output-format text --tools ""`;
+    // Use --system-prompt to override and force JSON-only output
+    const systemPrompt = 'You are a JSON generator. Output ONLY valid JSON arrays. No text, no markdown, no explanations. Start with [ and end with ].';
+    let cmd = `"${cliPath}" -p "${escapedPrompt}" --output-format text --tools "" --system-prompt "${systemPrompt}"`;
 
     if (this.options.model) {
       cmd += ` --model ${this.options.model}`;
@@ -186,6 +193,7 @@ export class ClaudeCanvasAgent {
       console.log(`[ClaudeCanvas] Calling Claude CLI (streaming) at: ${cliPath}`);
 
       // Build arguments for spawn
+      const systemPrompt = 'You are a JSON generator. Output ONLY valid JSON arrays. No text, no markdown, no explanations. Start with [ and end with ].';
       const args = [
         '-p',
         fullPrompt,
@@ -193,6 +201,8 @@ export class ClaudeCanvasAgent {
         'text',
         '--tools',
         '',
+        '--system-prompt',
+        systemPrompt,
       ];
 
       if (this.options.model) {
