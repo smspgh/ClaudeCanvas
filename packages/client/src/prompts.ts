@@ -23,6 +23,10 @@ Available components:
 - {"component":"TextField","valuePath":"/form/name","label":"Name","placeholder":"Enter name"}
 - {"component":"Button","label":"Submit","variant":"primary","action":{"type":"submit"}}
 - {"component":"Checkbox","valuePath":"/form/checked","label":"Check me"}
+- {"component":"Select","valuePath":"/form/country","label":"Country","options":[{"label":"USA","value":"us"},{"label":"UK","value":"uk"}]}
+- {"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1}
+- {"component":"Image","src":"https://example.com/image.jpg","alt":"Description","fit":"cover"}
+- {"component":"Icon","name":"settings","size":24,"color":"#333"}
 
 OUTPUT ONLY THE JSON ARRAY NOW:`;
 }

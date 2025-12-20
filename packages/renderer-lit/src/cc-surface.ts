@@ -120,6 +120,18 @@ export class CcSurface extends LitElement {
       case 'Checkbox':
         return html`<cc-checkbox .component=${component} .dataModel=${this.dataModel}></cc-checkbox>`;
 
+      case 'Select':
+        return html`<cc-select .component=${component} .dataModel=${this.dataModel}></cc-select>`;
+
+      case 'Slider':
+        return html`<cc-slider .component=${component} .dataModel=${this.dataModel}></cc-slider>`;
+
+      case 'Image':
+        return html`<cc-image .component=${component} .dataModel=${this.dataModel}></cc-image>`;
+
+      case 'Icon':
+        return html`<cc-icon .component=${component} .dataModel=${this.dataModel}></cc-icon>`;
+
       case 'Row':
         return html`
           <cc-row .component=${component} .dataModel=${this.dataModel}>
