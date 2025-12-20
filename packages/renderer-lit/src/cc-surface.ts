@@ -77,6 +77,12 @@ export class CcSurface extends LitElement {
   private handleAction(e: CustomEvent<{ action: Action; dataModel: DataModel }>) {
     const { action } = e.detail;
 
+    // Handle update/updateData action locally - used for modal open/close, etc.
+    if ((action.type === 'updateData' || action.type === 'update') && action.path !== undefined) {
+      this.dataModel = setByPointer(this.dataModel, action.path, action.value);
+      return;
+    }
+
     const userAction: UserActionMessage = {
       type: 'userAction',
       surfaceId: this.surface?.id ?? '',
@@ -155,6 +161,24 @@ export class CcSurface extends LitElement {
 
       case 'Divider':
         return html`<hr style=${component.vertical ? 'width: 1px; height: 100%; margin: 0 0.5rem;' : ''} />`;
+
+      case 'Modal':
+        return html`
+          <cc-modal .component=${component} .dataModel=${this.dataModel}>
+            ${component.children.map(child => this.renderComponent(child))}
+          </cc-modal>
+        `;
+
+      case 'Tabs': {
+        const activeTabValue = getByPointer(this.dataModel, component.valuePath) as string | undefined;
+        const activeTab = activeTabValue ?? component.tabs[0]?.value;
+        const activeTabData = component.tabs.find(tab => tab.value === activeTab);
+        return html`
+          <cc-tabs .component=${component} .dataModel=${this.dataModel}>
+            ${activeTabData ? activeTabData.children.map(child => this.renderComponent(child)) : nothing}
+          </cc-tabs>
+        `;
+      }
 
       default:
         console.warn(`Unknown component type: ${(component as Component).component}`);

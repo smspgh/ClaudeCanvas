@@ -18,6 +18,8 @@ export type {
   ColumnComponent,
   CardComponent,
   DividerComponent,
+  ModalComponent,
+  TabsComponent,
   TextComponent,
   ImageComponent,
   IconComponent,

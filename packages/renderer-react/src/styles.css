@@ -424,3 +424,145 @@
   height: 100%;
   margin: 0 0.5rem;
 }
+
+/* Modal */
+.cc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cc-modal {
+  background: var(--cc-card-bg);
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cc-modal-small {
+  width: 100%;
+  max-width: 400px;
+}
+
+.cc-modal-medium {
+  width: 100%;
+  max-width: 560px;
+}
+
+.cc-modal-large {
+  width: 100%;
+  max-width: 800px;
+}
+
+.cc-modal-fullscreen {
+  width: calc(100vw - 2rem);
+  height: calc(100vh - 2rem);
+  max-width: none;
+  max-height: none;
+}
+
+.cc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.cc-modal-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--cc-text);
+}
+
+.cc-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--cc-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.cc-modal-close:hover {
+  background: var(--cc-disabled-bg);
+  color: var(--cc-text);
+}
+
+.cc-modal-content {
+  padding: 1.25rem;
+  flex: 1;
+  overflow: auto;
+}
+
+/* Tabs */
+.cc-tabs {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.cc-tabs-list {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--cc-border);
+  margin-bottom: 1rem;
+}
+
+.cc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--cc-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.cc-tab:hover:not(:disabled) {
+  color: var(--cc-text);
+}
+
+.cc-tab.active {
+  color: var(--cc-primary);
+  border-bottom-color: var(--cc-primary);
+}
+
+.cc-tab.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cc-tab-icon {
+  display: inline-flex;
+  font-size: 1rem;
+}
+
+.cc-tabs-panel {
+  flex: 1;
+}

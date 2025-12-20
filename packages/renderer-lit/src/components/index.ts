@@ -9,3 +9,5 @@ export * from './cc-icon.js';
 export * from './cc-row.js';
 export * from './cc-column.js';
 export * from './cc-card.js';
+export * from './cc-modal.js';
+export * from './cc-tabs.js';

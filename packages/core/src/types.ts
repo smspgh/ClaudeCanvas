@@ -54,7 +54,7 @@ export interface ComponentStyle {
 // Actions
 // =============================================================================
 
-export type ActionType = 'submit' | 'navigate' | 'dismiss' | 'custom';
+export type ActionType = 'submit' | 'navigate' | 'dismiss' | 'custom' | 'updateData' | 'update';
 
 export interface Action {
   type: ActionType;
@@ -64,6 +64,10 @@ export interface Action {
   payload?: Record<string, unknown>;
   /** JSON pointer to data to include */
   dataPath?: JsonPointer;
+  /** For updateData action: path to update */
+  path?: JsonPointer;
+  /** For updateData action: value to set */
+  value?: unknown;
 }
 
 // =============================================================================
@@ -103,6 +107,31 @@ export interface CardComponent extends BaseComponent {
 export interface DividerComponent extends BaseComponent {
   component: 'Divider';
   vertical?: boolean;
+}
+
+export interface ModalComponent extends BaseComponent {
+  component: 'Modal';
+  /** JSON pointer to boolean controlling visibility */
+  openPath: JsonPointer;
+  title?: string;
+  children: Component[];
+  /** Size of the modal */
+  size?: 'small' | 'medium' | 'large' | 'fullscreen';
+  /** Whether clicking backdrop closes the modal */
+  dismissible?: boolean;
+}
+
+export interface TabsComponent extends BaseComponent {
+  component: 'Tabs';
+  /** JSON pointer to store active tab value */
+  valuePath: JsonPointer;
+  tabs: Array<{
+    label: string;
+    value: string;
+    icon?: string;
+    disabled?: boolean;
+    children: Component[];
+  }>;
 }
 
 // Display Components
@@ -208,6 +237,8 @@ export type Component =
   | ColumnComponent
   | CardComponent
   | DividerComponent
+  | ModalComponent
+  | TabsComponent
   | TextComponent
   | ImageComponent
   | IconComponent

@@ -28,6 +28,8 @@ Available components:
 - {"component":"Image","src":"https://example.com/image.jpg","alt":"Description","fit":"cover"}
 - {"component":"Icon","name":"settings","size":24,"color":"#333"}
 - {"component":"Divider"} (horizontal line separator)
+- {"component":"Modal","openPath":"/ui/showModal","title":"Dialog Title","size":"medium","dismissible":true,"children":[...]}
+- {"component":"Tabs","valuePath":"/ui/activeTab","tabs":[{"label":"Tab 1","value":"tab1","children":[...]},{"label":"Tab 2","value":"tab2","children":[...]}]}
 
 OUTPUT ONLY THE JSON ARRAY NOW:`;
 }
@@ -50,6 +52,9 @@ Always respond with a JSON array of messages:
 - Text: Display text with textStyle (heading1/2/3, body, caption)
 - TextField: Input with valuePath, label, placeholder, inputType
 - Button: Clickable with label, variant, action
+- Modal: Dialog overlay with openPath (boolean), title, size, dismissible, children
+- Tabs: Tabbed interface with valuePath, tabs array containing label, value, children
+- Divider: Horizontal or vertical separator line
 `;
 
 export function getSystemPrompt(): string {

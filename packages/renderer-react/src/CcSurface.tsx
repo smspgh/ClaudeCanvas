@@ -21,6 +21,8 @@ import { CcRow } from './components/CcRow.js';
 import { CcColumn } from './components/CcColumn.js';
 import { CcCard } from './components/CcCard.js';
 import { CcDivider } from './components/CcDivider.js';
+import { CcModal } from './components/CcModal.js';
+import { CcTabs } from './components/CcTabs.js';
 
 export interface CcSurfaceProps {
   /** The surface definition to render */
@@ -60,6 +62,12 @@ export function CcSurface({
   const handleAction = useCallback((action: Action) => {
     if (!surface) return;
 
+    // Handle update/updateData action locally - used for modal open/close, etc.
+    if ((action.type === 'updateData' || action.type === 'update') && action.path !== undefined) {
+      handleInput(action.path, action.value);
+      return;
+    }
+
     const message: UserActionMessage = {
       type: 'userAction',
       surfaceId: surface.id,
@@ -68,7 +76,7 @@ export function CcSurface({
     };
 
     onAction?.(message);
-  }, [surface, dataModel, onAction]);
+  }, [surface, dataModel, onAction, handleInput]);
 
   const isVisible = (component: Component): boolean => {
     if (!component.visibleIf) return true;
@@ -165,6 +173,29 @@ export function CcSurface({
 
       case 'Divider':
         return <CcDivider key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'Modal':
+        return (
+          <CcModal
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          >
+            {component.children.map((child, i) => renderComponent(child, i))}
+          </CcModal>
+        );
+
+      case 'Tabs':
+        return (
+          <CcTabs
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+            renderChildren={(children) => children.map((child, i) => renderComponent(child, i))}
+          />
+        );
 
       default:
         console.warn(`Unknown component type: ${(component as Component).component}`);

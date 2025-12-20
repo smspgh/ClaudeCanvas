@@ -10,3 +10,5 @@ export * from './CcRow.js';
 export * from './CcColumn.js';
 export * from './CcCard.js';
 export * from './CcDivider.js';
+export * from './CcModal.js';
+export * from './CcTabs.js';
