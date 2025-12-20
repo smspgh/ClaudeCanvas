@@ -6,9 +6,18 @@
 import type { AgentToClientMessage } from './types.js';
 
 export interface StreamingParserEvents {
+  /** Called when a message is parsed */
   onMessage?: (message: AgentToClientMessage) => void;
+  /** Called when a parsing error occurs */
   onError?: (error: Error) => void;
+  /** Called when parsing is complete */
   onComplete?: (messages: AgentToClientMessage[]) => void;
+  /** Called when beginRendering is received - signals UI should start rendering */
+  onBeginRendering?: (surfaceId: string) => void;
+  /** Called when surfaceUpdate is received - for progressive UI updates */
+  onSurfaceUpdate?: (surface: AgentToClientMessage) => void;
+  /** Called when dataModelUpdate is received - for data changes */
+  onDataModelUpdate?: (update: AgentToClientMessage) => void;
 }
 
 export interface StreamingParserState {
@@ -138,7 +147,22 @@ export class StreamingJsonParser {
     try {
       const message = JSON.parse(jsonStr) as AgentToClientMessage;
       this.state.messages.push(message);
+
+      // Call general message handler
       this.events.onMessage?.(message);
+
+      // Call type-specific handlers for progressive rendering
+      switch (message.type) {
+        case 'beginRendering':
+          this.events.onBeginRendering?.(message.surfaceId);
+          break;
+        case 'surfaceUpdate':
+          this.events.onSurfaceUpdate?.(message);
+          break;
+        case 'dataModelUpdate':
+          this.events.onDataModelUpdate?.(message);
+          break;
+      }
     } catch (error) {
       this.events.onError?.(new Error(`Failed to parse message: ${jsonStr.substring(0, 100)}`));
     }
@@ -213,6 +237,142 @@ export function parseMessages(text: string): AgentToClientMessage[] {
     return Array.isArray(parsed) ? parsed : [parsed];
   } catch {
     throw new Error('Failed to parse ClaudeCanvas messages');
+  }
+}
+
+/**
+ * Buffered Surface Manager for progressive rendering
+ * Buffers updates until beginRendering is received, then renders progressively
+ */
+export class BufferedSurfaceManager {
+  private componentBuffer: Map<string, Map<string, unknown>> = new Map(); // surfaceId -> components
+  private dataModelBuffer: Map<string, unknown> = new Map(); // path -> data
+  private readySurfaces: Set<string> = new Set();
+
+  private events: {
+    onReady?: (surfaceId: string) => void;
+    onUpdate?: (surfaceId: string, components: Map<string, unknown>, data: Map<string, unknown>) => void;
+  };
+
+  constructor(events: BufferedSurfaceManager['events'] = {}) {
+    this.events = events;
+  }
+
+  /**
+   * Process a surfaceUpdate message
+   */
+  processSurfaceUpdate(message: AgentToClientMessage): void {
+    if (message.type !== 'surfaceUpdate') return;
+
+    const surfaceId = message.surface.id;
+    if (!this.componentBuffer.has(surfaceId)) {
+      this.componentBuffer.set(surfaceId, new Map());
+    }
+
+    // Store surface components (in real impl would store by component ID)
+    this.componentBuffer.get(surfaceId)!.set('surface', message.surface);
+
+    // If surface is ready, emit update immediately
+    if (this.readySurfaces.has(surfaceId)) {
+      this.emitUpdate(surfaceId);
+    }
+  }
+
+  /**
+   * Process a dataModelUpdate message
+   */
+  processDataModelUpdate(message: AgentToClientMessage): void {
+    if (message.type !== 'dataModelUpdate') return;
+    this.dataModelBuffer.set(message.path, message.data);
+
+    // Emit updates for all ready surfaces
+    for (const surfaceId of this.readySurfaces) {
+      this.emitUpdate(surfaceId);
+    }
+  }
+
+  /**
+   * Process a beginRendering message
+   */
+  processBeginRendering(surfaceId: string): void {
+    this.readySurfaces.add(surfaceId);
+    this.events.onReady?.(surfaceId);
+    this.emitUpdate(surfaceId);
+  }
+
+  /**
+   * Process any message
+   */
+  processMessage(message: AgentToClientMessage): void {
+    switch (message.type) {
+      case 'surfaceUpdate':
+        this.processSurfaceUpdate(message);
+        break;
+      case 'dataModelUpdate':
+        this.processDataModelUpdate(message);
+        break;
+      case 'beginRendering':
+        this.processBeginRendering(message.surfaceId);
+        break;
+      case 'deleteSurface':
+        this.componentBuffer.delete(message.surfaceId);
+        this.readySurfaces.delete(message.surfaceId);
+        break;
+    }
+  }
+
+  private emitUpdate(surfaceId: string): void {
+    const components = this.componentBuffer.get(surfaceId);
+    if (components) {
+      this.events.onUpdate?.(surfaceId, components, this.dataModelBuffer);
+    }
+  }
+
+  /**
+   * Check if a surface is ready to render
+   */
+  isReady(surfaceId: string): boolean {
+    return this.readySurfaces.has(surfaceId);
+  }
+
+  /**
+   * Get buffered surface data
+   */
+  getSurface(surfaceId: string): unknown | undefined {
+    return this.componentBuffer.get(surfaceId)?.get('surface');
+  }
+
+  /**
+   * Get current data model
+   */
+  getDataModel(): Record<string, unknown> {
+    const model: Record<string, unknown> = {};
+    for (const [path, data] of this.dataModelBuffer) {
+      if (path === '/') {
+        Object.assign(model, data);
+      } else {
+        // Simple path assignment (could be enhanced with full JSON pointer support)
+        const keys = path.split('/').filter(Boolean);
+        let current: Record<string, unknown> = model;
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) current[keys[i]] = {};
+          current = current[keys[i]] as Record<string, unknown>;
+        }
+        if (keys.length > 0) {
+          current[keys[keys.length - 1]] = data;
+        }
+      }
+    }
+    return model;
+  }
+
+  /**
+   * Reset all state
+   */
+  reset(): void {
+    this.componentBuffer.clear();
+    this.dataModelBuffer.clear();
+    this.readySurfaces.clear();
   }
 }
 

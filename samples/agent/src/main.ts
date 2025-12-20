@@ -91,6 +91,227 @@ async function checkServer(): Promise<boolean> {
 
 // Demo responses for when server is offline
 const demoResponses: Record<string, AgentToClientMessage[]> = {
+  dashboard: [
+    {
+      type: 'dataModelUpdate',
+      path: '/',
+      data: {
+        chartData: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [
+            { label: 'Revenue', data: [12000, 19000, 15000, 22000, 18000, 25000], color: '#6366f1' },
+            { label: 'Expenses', data: [8000, 11000, 9500, 13000, 10000, 14000], color: '#f43f5e' },
+          ],
+        },
+        orders: [
+          { id: 1, customer: 'Acme Corp', amount: 1250, status: 'Completed' },
+          { id: 2, customer: 'TechStart Inc', amount: 890, status: 'Pending' },
+          { id: 3, customer: 'Global Foods', amount: 2100, status: 'Completed' },
+          { id: 4, customer: 'City Motors', amount: 3400, status: 'Processing' },
+          { id: 5, customer: 'DataFlow LLC', amount: 1780, status: 'Completed' },
+          { id: 6, customer: 'CloudSync Pro', amount: 2950, status: 'Pending' },
+          { id: 7, customer: 'GreenEnergy Co', amount: 4200, status: 'Completed' },
+          { id: 8, customer: 'SmartHome Ltd', amount: 1100, status: 'Processing' },
+        ],
+      },
+    },
+    {
+      type: 'surfaceUpdate',
+      surface: {
+        id: 'dashboard',
+        title: 'Sales Dashboard',
+        components: [
+          {
+            component: 'Column',
+            gap: 24,
+            children: [
+              { component: 'Text', content: 'Sales Dashboard', textStyle: 'heading1' },
+              {
+                component: 'Card',
+                elevated: true,
+                children: [
+                  {
+                    component: 'Column',
+                    gap: 16,
+                    children: [
+                      { component: 'Text', content: 'Monthly Revenue vs Expenses', textStyle: 'heading3' },
+                      {
+                        component: 'Chart',
+                        chartType: 'bar',
+                        dataPath: '/chartData',
+                        title: 'Revenue Comparison',
+                        showLegend: true,
+                        height: 280,
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                component: 'Card',
+                elevated: true,
+                children: [
+                  {
+                    component: 'Column',
+                    gap: 16,
+                    children: [
+                      { component: 'Text', content: 'Recent Orders', textStyle: 'heading3' },
+                      {
+                        component: 'DataTable',
+                        dataPath: '/orders',
+                        columns: [
+                          { key: 'id', label: 'ID', width: 60, sortable: true },
+                          { key: 'customer', label: 'Customer', sortable: true },
+                          { key: 'amount', label: 'Amount ($)', sortable: true },
+                          { key: 'status', label: 'Status', sortable: true },
+                        ],
+                        pagination: true,
+                        pageSize: 5,
+                        searchable: true,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+  editor: [
+    {
+      type: 'dataModelUpdate',
+      path: '/',
+      data: {
+        content: '<h2>Welcome to the Editor</h2><p>Start typing your content here...</p>',
+      },
+    },
+    {
+      type: 'surfaceUpdate',
+      surface: {
+        id: 'editor',
+        title: 'Rich Text Editor',
+        components: [
+          {
+            component: 'Card',
+            elevated: true,
+            children: [
+              {
+                component: 'Column',
+                gap: 16,
+                children: [
+                  { component: 'Text', content: 'Document Editor', textStyle: 'heading2' },
+                  {
+                    component: 'RichTextEditor',
+                    valuePath: '/content',
+                    placeholder: 'Start writing...',
+                    minHeight: 300,
+                    toolbar: ['bold', 'italic', 'underline', 'heading', 'list', 'link', 'code'],
+                  },
+                  {
+                    component: 'Row',
+                    gap: 12,
+                    justify: 'end',
+                    children: [
+                      { component: 'Button', label: 'Cancel', variant: 'outline', action: { type: 'custom', event: 'cancel' } },
+                      { component: 'Button', label: 'Save Document', variant: 'primary', action: { type: 'submit' } },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+  charts: [
+    {
+      type: 'dataModelUpdate',
+      path: '/',
+      data: {
+        pieData: {
+          labels: ['Product A', 'Product B', 'Product C', 'Product D'],
+          datasets: [{ label: 'Sales', data: [35, 25, 22, 18], color: '#6366f1' }],
+        },
+        lineData: {
+          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+          datasets: [
+            { label: 'Visitors', data: [1200, 1900, 1700, 2400, 2100, 2800], color: '#22c55e' },
+            { label: 'Conversions', data: [120, 180, 150, 220, 190, 260], color: '#f97316' },
+          ],
+        },
+      },
+    },
+    {
+      type: 'surfaceUpdate',
+      surface: {
+        id: 'charts',
+        title: 'Chart Gallery',
+        components: [
+          {
+            component: 'Column',
+            gap: 24,
+            children: [
+              { component: 'Text', content: 'Chart Gallery', textStyle: 'heading1' },
+              {
+                component: 'Row',
+                gap: 24,
+                wrap: true,
+                children: [
+                  {
+                    component: 'Card',
+                    elevated: true,
+                    style: { flex: 1, minWidth: 300 },
+                    children: [
+                      {
+                        component: 'Column',
+                        gap: 12,
+                        children: [
+                          { component: 'Text', content: 'Product Distribution (Pie)', textStyle: 'heading3' },
+                          { component: 'Chart', chartType: 'pie', dataPath: '/pieData', showLegend: true, height: 250 },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    component: 'Card',
+                    elevated: true,
+                    style: { flex: 1, minWidth: 300 },
+                    children: [
+                      {
+                        component: 'Column',
+                        gap: 12,
+                        children: [
+                          { component: 'Text', content: 'Product Distribution (Doughnut)', textStyle: 'heading3' },
+                          { component: 'Chart', chartType: 'doughnut', dataPath: '/pieData', showLegend: true, height: 250 },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                component: 'Card',
+                elevated: true,
+                children: [
+                  {
+                    component: 'Column',
+                    gap: 12,
+                    children: [
+                      { component: 'Text', content: 'Website Traffic (Line Chart)', textStyle: 'heading3' },
+                      { component: 'Chart', chartType: 'line', dataPath: '/lineData', showLegend: true, height: 300 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   settings: [
     {
       type: 'dataModelUpdate',
@@ -272,6 +493,9 @@ const demoResponses: Record<string, AgentToClientMessage[]> = {
 
 function matchDemoPrompt(prompt: string): AgentToClientMessage[] | null {
   const lower = prompt.toLowerCase();
+  if (lower.includes('dashboard') || lower.includes('sales') || lower.includes('table')) return demoResponses.dashboard;
+  if (lower.includes('chart') || lower.includes('graph') || lower.includes('pie') || lower.includes('line')) return demoResponses.charts;
+  if (lower.includes('editor') || lower.includes('rich text') || lower.includes('wysiwyg')) return demoResponses.editor;
   if (lower.includes('settings') || lower.includes('slider') || lower.includes('volume')) return demoResponses.settings;
   if (lower.includes('login') || lower.includes('sign in')) return demoResponses.login;
   if (lower.includes('profile') || lower.includes('user')) return demoResponses.profile;
@@ -350,7 +574,7 @@ surfaceLit.addEventListener('cc-user-action', async (e: Event) => {
   console.log('ClaudeCanvas Dual Renderer Demo loaded');
   console.log('Server available:', serverAvailable);
   if (!serverAvailable) {
-    console.log('Demo prompts: "settings", "login", "profile"');
+    console.log('Demo prompts: "dashboard", "charts", "editor", "settings", "login", "profile"');
   }
 
   // Initialize React root

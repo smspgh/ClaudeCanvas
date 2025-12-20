@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import type { CardComponent, DataModel } from '@claude-canvas/core';
+import { styleToString } from '../utils/style.js';
 
 @customElement('cc-card')
 export class CcCard extends LitElement {
@@ -15,6 +16,8 @@ export class CcCard extends LitElement {
       border-radius: 12px;
       padding: 1rem;
       border: 1px solid var(--cc-border, #e5e5e5);
+      height: 100%;
+      box-sizing: border-box;
     }
 
     .card.elevated {
@@ -29,6 +32,14 @@ export class CcCard extends LitElement {
 
   @property({ type: Object })
   dataModel: DataModel = {};
+
+  updated() {
+    // Apply component style to host element for flex layout support
+    if (this.component.style) {
+      const styleStr = styleToString(this.component.style);
+      this.style.cssText = styleStr;
+    }
+  }
 
   render() {
     const classes = {

@@ -144,6 +144,15 @@ export class CcSurface extends LitElement {
       case 'MultipleChoice':
         return html`<cc-multiple-choice .component=${component} .dataModel=${this.dataModel}></cc-multiple-choice>`;
 
+      case 'Chart':
+        return html`<cc-chart .component=${component} .dataModel=${this.dataModel}></cc-chart>`;
+
+      case 'DataTable':
+        return html`<cc-data-table .component=${component} .dataModel=${this.dataModel}></cc-data-table>`;
+
+      case 'RichTextEditor':
+        return html`<cc-rich-text-editor .component=${component} .dataModel=${this.dataModel}></cc-rich-text-editor>`;
+
       case 'Image':
         return html`<cc-image .component=${component} .dataModel=${this.dataModel}></cc-image>`;
 

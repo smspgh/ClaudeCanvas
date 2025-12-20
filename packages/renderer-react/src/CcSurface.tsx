@@ -19,6 +19,9 @@ import { CcDateTimeInput } from './components/CcDateTimeInput.js';
 import { CcVideo } from './components/CcVideo.js';
 import { CcAudioPlayer } from './components/CcAudioPlayer.js';
 import { CcMultipleChoice } from './components/CcMultipleChoice.js';
+import { CcChart } from './components/CcChart.js';
+import { CcDataTable } from './components/CcDataTable.js';
+import { CcRichTextEditor } from './components/CcRichTextEditor.js';
 import { CcImage } from './components/CcImage.js';
 import { CcIcon } from './components/CcIcon.js';
 import { CcRow } from './components/CcRow.js';
@@ -167,6 +170,29 @@ export function CcSurface({
       case 'MultipleChoice':
         return (
           <CcMultipleChoice
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          />
+        );
+
+      case 'Chart':
+        return <CcChart key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'DataTable':
+        return (
+          <CcDataTable
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          />
+        );
+
+      case 'RichTextEditor':
+        return (
+          <CcRichTextEditor
             key={componentKey}
             component={component}
             dataModel={dataModel}

@@ -262,6 +262,78 @@ export interface MultipleChoiceComponent extends BaseComponent {
   disabled?: boolean;
 }
 
+// Data Visualization Components
+export interface ChartDataPoint {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface ChartDataset {
+  label: string;
+  data: number[];
+  color?: string;
+}
+
+export interface ChartComponent extends BaseComponent {
+  component: 'Chart';
+  /** Chart type */
+  chartType: 'bar' | 'line' | 'pie' | 'doughnut';
+  /** JSON pointer to chart data or inline data */
+  dataPath?: JsonPointer;
+  /** Inline data for simple charts */
+  data?: {
+    labels: string[];
+    datasets: ChartDataset[];
+  };
+  /** Chart title */
+  title?: string;
+  /** Show legend */
+  showLegend?: boolean;
+  /** Chart height in pixels */
+  height?: number;
+}
+
+export interface DataTableColumn {
+  key: string;
+  label: string;
+  sortable?: boolean;
+  width?: string | number;
+}
+
+export interface DataTableComponent extends BaseComponent {
+  component: 'DataTable';
+  /** JSON pointer to array of row data */
+  dataPath: JsonPointer;
+  /** Column definitions */
+  columns: DataTableColumn[];
+  /** Enable pagination */
+  pagination?: boolean;
+  /** Rows per page (default: 10) */
+  pageSize?: number;
+  /** Enable row selection */
+  selectable?: boolean;
+  /** JSON pointer to store selected row IDs */
+  selectionPath?: JsonPointer;
+  /** Show search/filter input */
+  searchable?: boolean;
+  /** Empty state message */
+  emptyMessage?: string;
+}
+
+export interface RichTextEditorComponent extends BaseComponent {
+  component: 'RichTextEditor';
+  /** JSON pointer for content binding (HTML string) */
+  valuePath: JsonPointer;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Minimum height in pixels */
+  minHeight?: number;
+  /** Available toolbar options */
+  toolbar?: ('bold' | 'italic' | 'underline' | 'strike' | 'heading' | 'list' | 'link' | 'image' | 'code')[];
+  disabled?: boolean;
+}
+
 // Interactive Components
 export interface ButtonComponent extends BaseComponent {
   component: 'Button';
@@ -310,6 +382,9 @@ export type Component =
   | VideoComponent
   | AudioPlayerComponent
   | MultipleChoiceComponent
+  | ChartComponent
+  | DataTableComponent
+  | RichTextEditorComponent
   | ButtonComponent
   | LinkComponent
   | ListComponent;

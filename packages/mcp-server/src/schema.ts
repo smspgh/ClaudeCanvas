@@ -69,6 +69,18 @@ export const COMPONENT_CATALOG = `
   \`{"component":"AudioPlayer","src":"https://...audio.mp3","title":"Track Name","controls":true,"autoplay":false,"loop":false}\`
   Use \`srcPath\` for dynamic src: \`{"component":"AudioPlayer","srcPath":"/media/audioUrl","title":"Now Playing"}\`
 
+### Data Visualization Components
+- **Chart**: Bar, line, pie, or doughnut chart
+  \`{"component":"Chart","chartType":"bar","title":"Sales","data":{"labels":["Jan","Feb","Mar"],"datasets":[{"label":"Revenue","data":[100,200,150],"color":"#6366f1"}]},"showLegend":true,"height":250}\`
+  Chart types: \`bar\`, \`line\`, \`pie\`, \`doughnut\`
+  Use \`dataPath\` for dynamic data: \`{"component":"Chart","chartType":"line","dataPath":"/analytics/chartData"}\`
+
+- **DataTable**: Sortable, paginated data table
+  \`{"component":"DataTable","dataPath":"/data/users","columns":[{"key":"name","label":"Name","sortable":true},{"key":"email","label":"Email"},{"key":"role","label":"Role","width":100}],"pagination":true,"pageSize":10,"searchable":true,"selectable":false}\`
+
+- **RichTextEditor**: WYSIWYG text editor
+  \`{"component":"RichTextEditor","valuePath":"/form/content","placeholder":"Write something...","minHeight":200,"toolbar":["bold","italic","underline","heading","list","link","code"]}\`
+
 ### Interactive Components
 - **Button**: Clickable button with action
   \`{"component":"Button","label":"Submit","variant":"primary|secondary|outline|ghost|danger","icon":"send","action":{"type":"submit"}}\`

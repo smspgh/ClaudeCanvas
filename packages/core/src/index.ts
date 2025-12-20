@@ -12,5 +12,8 @@ export * from './utils.js';
 // Streaming
 export * from './streaming.js';
 
+// A2A Protocol Integration
+export * from './a2a.js';
+
 // Schemas
 export * from './schemas/index.js';

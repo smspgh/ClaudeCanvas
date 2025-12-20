@@ -13,7 +13,7 @@ function getFlexAlign(align?: string): string {
     case 'end': return 'flex-end';
     case 'center': return 'center';
     case 'stretch': return 'stretch';
-    default: return 'flex-start';
+    default: return 'stretch';
   }
 }
 
