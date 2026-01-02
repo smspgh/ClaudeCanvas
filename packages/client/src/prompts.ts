@@ -41,7 +41,7 @@ DataTable props: columns (type: text|image|avatar|badge), selectionPath (for sel
 IMPORTANT - CHOOSING List vs DataTable:
 - Use DataTable for tabular data with sorting, pagination, search, selection (employee directories, product catalogs, data grids)
 - Use List for simple repeated items (chat messages, todo items, cards, notifications)
-DataTable has BUILT-IN: sorting, pagination, search, row selection, bulk actions - don't rebuild these with List!
+DataTable has BUILT-IN: sorting, pagination, search, row selection - do NOT add separate TextField/buttons for these features!
 
 LIST FEATURES:
 - Inside itemTemplate: /item/fieldName for item data, /index for position
