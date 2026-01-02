@@ -337,8 +337,8 @@ export interface DataTableColumn {
   label: string;
   sortable?: boolean;
   width?: string | number;
-  /** Column type for special rendering: 'text' (default), 'image', 'avatar', 'badge' */
-  type?: 'text' | 'image' | 'avatar' | 'badge';
+  /** Column type for special rendering: 'text' (default), 'image', 'avatar', 'badge', 'statusDot' */
+  type?: 'text' | 'image' | 'avatar' | 'badge' | 'statusDot';
 }
 
 export interface DataTableComponent extends BaseComponent {
@@ -361,6 +361,8 @@ export interface DataTableComponent extends BaseComponent {
   searchPlaceholder?: string;
   /** Empty state message */
   emptyMessage?: string;
+  /** Enable alternating row backgrounds (zebra striping) */
+  alternateBackground?: boolean;
 }
 
 export interface RichTextEditorComponent extends BaseComponent {

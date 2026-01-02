@@ -115,6 +115,15 @@ export function CcDataTable({ component, dataModel, onInput }: CcDataTableProps)
         const badgeClass = `cc-data-table-cell-badge badge-${strValue.toLowerCase()}`;
         return <span className={badgeClass}>{strValue}</span>;
       }
+      case 'statusDot': {
+        const dotClass = `cc-data-table-status-dot status-dot-${strValue.toLowerCase()}`;
+        return (
+          <span className="cc-data-table-status-dot-container">
+            <span className={dotClass}></span>
+            <span className="cc-data-table-status-dot-label">{strValue}</span>
+          </span>
+        );
+      }
       default:
         return strValue;
     }
@@ -171,8 +180,11 @@ export function CcDataTable({ component, dataModel, onInput }: CcDataTableProps)
           <tbody>
             {pagedData.map((row, i) => {
               const actualIndex = component.pagination ? currentPage * pageSize + i : i;
+              const rowClasses: string[] = [];
+              if (selectedRows.has(actualIndex)) rowClasses.push('selected');
+              if (component.alternateBackground && i % 2 === 1) rowClasses.push('alternate');
               return (
-                <tr key={i} className={selectedRows.has(actualIndex) ? 'selected' : ''}>
+                <tr key={i} className={rowClasses.join(' ')}>
                   {component.selectable && (
                     <td className="cc-data-table-checkbox">
                       <input

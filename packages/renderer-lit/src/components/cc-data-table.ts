@@ -149,6 +149,42 @@ export class CcDataTable extends LitElement {
       color: #1e40af;
     }
 
+    /* Status dot styles */
+    .status-dot-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cc-text-secondary, #6b7280);
+    }
+
+    .status-dot.status-dot-active, .status-dot.status-dot-online {
+      background: #22c55e;
+    }
+
+    .status-dot.status-dot-away, .status-dot.status-dot-busy {
+      background: #f59e0b;
+    }
+
+    .status-dot.status-dot-offline, .status-dot.status-dot-inactive {
+      background: #ef4444;
+    }
+
+    .status-dot-label {
+      font-size: 0.875rem;
+      color: var(--cc-text, #333);
+    }
+
+    /* Alternating row backgrounds */
+    tr.alternate td {
+      background: var(--cc-surface-dim, #f9fafb);
+    }
+
     .empty-state {
       padding: 3rem;
       text-align: center;
@@ -224,6 +260,10 @@ export class CcDataTable extends LitElement {
       case 'badge': {
         const badgeClass = `badge-${strValue.toLowerCase()}`;
         return html`<span class="cell-badge ${badgeClass}">${strValue}</span>`;
+      }
+      case 'statusDot': {
+        const dotClass = `status-dot-${strValue.toLowerCase()}`;
+        return html`<span class="status-dot-container"><span class="status-dot ${dotClass}"></span><span class="status-dot-label">${strValue}</span></span>`;
       }
       default:
         return strValue;
@@ -403,8 +443,11 @@ export class CcDataTable extends LitElement {
             <tbody>
               ${pagedData.map((row, i) => {
                 const actualIndex = this.component.pagination ? this.currentPage * pageSize + i : i;
+                const rowClasses: string[] = [];
+                if (this.selectedRows.has(actualIndex)) rowClasses.push('selected');
+                if (this.component.alternateBackground && i % 2 === 1) rowClasses.push('alternate');
                 return html`
-                  <tr class=${this.selectedRows.has(actualIndex) ? 'selected' : ''}>
+                  <tr class=${rowClasses.join(' ')}>
                     ${this.component.selectable ? html`
                       <td class="checkbox-cell">
                         <input

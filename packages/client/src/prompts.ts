@@ -35,8 +35,9 @@ Skeleton: {"component":"Skeleton","variant":"text|circular|rectangular","lines":
 Tooltip: {"component":"Tooltip","content":"Hover info","position":"top","children":[...]}
 Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","children":[...]}],"allowMultiple":false}
 List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items","alternateBackground":true}
-DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"searchPlaceholder":"Search employees...","selectable":true,"selectionPath":"/selectedRows"}
-DataTable props: columns (type: text|image|avatar|badge), selectionPath (for selected rows array), selectable, searchable, searchPlaceholder, pagination, pageSize
+DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"statusDot"}],"pagination":true,"pageSize":10,"searchable":true,"searchPlaceholder":"Search employees...","selectable":true,"selectionPath":"/selectedRows","alternateBackground":true}
+DataTable props: columns (type: text|image|avatar|badge|statusDot), selectionPath (for selected rows), selectable, searchable, searchPlaceholder, pagination, pageSize, alternateBackground
+Column types: badge (colored pill), statusDot (colored dot + label for active/away/offline/online/busy)
 BULK ACTIONS BAR: To show selection count, use contentExpr: {"component":"Text","contentPath":"/selectedRows","contentExpr":"length"} then append " selected" as separate Text
 
 IMPORTANT - CHOOSING List vs DataTable:

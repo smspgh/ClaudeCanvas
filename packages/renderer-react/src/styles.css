@@ -790,6 +790,45 @@
   color: #1e40af;
 }
 
+/* Status dot styles */
+.cc-data-table-status-dot-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cc-data-table-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cc-text-secondary);
+}
+
+.cc-data-table-status-dot.status-dot-active,
+.cc-data-table-status-dot.status-dot-online {
+  background: #22c55e;
+}
+
+.cc-data-table-status-dot.status-dot-away,
+.cc-data-table-status-dot.status-dot-busy {
+  background: #f59e0b;
+}
+
+.cc-data-table-status-dot.status-dot-offline,
+.cc-data-table-status-dot.status-dot-inactive {
+  background: #ef4444;
+}
+
+.cc-data-table-status-dot-label {
+  font-size: 0.875rem;
+  color: var(--cc-text);
+}
+
+/* Alternating row backgrounds */
+.cc-data-table-table tbody tr.alternate td {
+  background: var(--cc-disabled-bg);
+}
+
 /* Rich Text Editor */
 .cc-rich-text-editor {
   display: flex;
