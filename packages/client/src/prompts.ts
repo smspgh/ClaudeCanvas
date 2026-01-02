@@ -35,8 +35,8 @@ Skeleton: {"component":"Skeleton","variant":"text|circular|rectangular","lines":
 Tooltip: {"component":"Tooltip","content":"Hover info","position":"top","children":[...]}
 Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","children":[...]}],"allowMultiple":false}
 List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items","alternateBackground":true}
-DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"selectable":true}
-DataTable column types: "text" (default), "image", "avatar", "badge" - use type:"avatar" for profile pics, type:"badge" for status fields
+DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"selectable":true,"selectionPath":"/selectedRows"}
+DataTable props: columns (type: text|image|avatar|badge), selectionPath (for selected rows array), selectable, searchable, pagination, pageSize
 
 IMPORTANT - CHOOSING List vs DataTable:
 - Use DataTable for tabular data with sorting, pagination, search, selection (employee directories, product catalogs, data grids)
