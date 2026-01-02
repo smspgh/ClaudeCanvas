@@ -17,3 +17,9 @@ export * from './a2a.js';
 
 // Schemas
 export * from './schemas/index.js';
+
+// Theme System
+export * from './theme.js';
+
+// Component Registry & Plugin System
+export * from './registry.js';

@@ -20,11 +20,38 @@ function getFlexAlign(align?: string, defaultValue = 'stretch'): string {
 }
 
 export function CcRow({ component, children }: CcRowProps) {
+  // Support both component props (justify, align) and CSS-style properties in style object
+  const componentStyle = component.style as Record<string, unknown> | undefined;
+  const justifyFromStyle = componentStyle?.justifyContent as string | undefined;
+  const alignFromStyle = componentStyle?.alignItems as string | undefined;
+
   const style: React.CSSProperties = {
     gap: component.gap ?? 0,
-    alignItems: getFlexAlign(component.align, 'stretch'),
-    justifyContent: getFlexAlign(component.justify, 'flex-start'),
+    alignItems: component.align
+      ? getFlexAlign(component.align, 'stretch')
+      : (alignFromStyle ?? 'stretch'),
+    justifyContent: component.justify
+      ? getFlexAlign(component.justify, 'flex-start')
+      : (justifyFromStyle ?? 'flex-start'),
   };
+
+  // Support overflow from style object for scrollable layouts
+  if (componentStyle?.overflowX) {
+    style.overflowX = componentStyle.overflowX as React.CSSProperties['overflowX'];
+  }
+  if (componentStyle?.overflowY) {
+    style.overflowY = componentStyle.overflowY as React.CSSProperties['overflowY'];
+  }
+  if (componentStyle?.overflow) {
+    style.overflow = componentStyle.overflow as React.CSSProperties['overflow'];
+  }
+  // Support flex for responsive sizing
+  if (componentStyle?.flex) {
+    style.flex = componentStyle.flex as React.CSSProperties['flex'];
+  }
+  if (componentStyle?.minWidth) {
+    style.minWidth = componentStyle.minWidth as React.CSSProperties['minWidth'];
+  }
 
   return (
     <div className={`cc-row ${component.wrap ? 'wrap' : ''}`} style={style}>

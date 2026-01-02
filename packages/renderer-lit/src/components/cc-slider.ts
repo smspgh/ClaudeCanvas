@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { SliderComponent, DataModel } from '@claude-canvas/core';
 import { getByPointer } from '@claude-canvas/core';
@@ -8,6 +8,10 @@ export class CcSlider extends LitElement {
   static styles = css`
     :host {
       display: block;
+    }
+
+    :host([data-flex]) {
+      flex: 1;
     }
 
     .slider-wrapper {
@@ -52,7 +56,7 @@ export class CcSlider extends LitElement {
       appearance: none;
       width: 1.25rem;
       height: 1.25rem;
-      background: var(--cc-primary, #6366f1);
+      background: var(--slider-thumb-color, var(--cc-primary, #6366f1));
       border-radius: 50%;
       cursor: pointer;
       border: 2px solid white;
@@ -62,7 +66,7 @@ export class CcSlider extends LitElement {
     input[type="range"]::-moz-range-thumb {
       width: 1.25rem;
       height: 1.25rem;
-      background: var(--cc-primary, #6366f1);
+      background: var(--slider-thumb-color, var(--cc-primary, #6366f1));
       border-radius: 50%;
       cursor: pointer;
       border: 2px solid white;
@@ -112,22 +116,47 @@ export class CcSlider extends LitElement {
     this.dispatchEvent(event);
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    // Apply flex from style to host element
+    const style = this.component?.style as Record<string, unknown> | undefined;
+    if (style?.flex) {
+      this.setAttribute('data-flex', '');
+      this.style.flex = String(style.flex);
+    }
+  }
+
   render() {
     const value = this.getValue();
     const min = this.component.min ?? 0;
     const max = this.component.max ?? 100;
     const step = this.component.step ?? 1;
+    const showValue = this.component.showValue ?? true;
     const id = `slider-${this.component.valuePath.replace(/\//g, '-')}`;
 
+    // Calculate percentage for gradient fill
+    const percentage = ((value - min) / (max - min)) * 100;
+    const trackColor = this.component.trackColor ?? 'var(--cc-border, #d1d5db)';
+    const fillColor = this.component.fillColor ?? 'var(--cc-primary, #6366f1)';
+
+    // Create gradient background to show filled portion
+    const sliderStyle = `background: linear-gradient(to right, ${fillColor} 0%, ${fillColor} ${percentage}%, ${trackColor} ${percentage}%, ${trackColor} 100%);`;
+    const thumbStyle = this.component.fillColor ? `--slider-thumb-color: ${fillColor};` : '';
+
+    // Hide header if no label and showValue is false
+    const hasHeader = this.component.label || showValue;
+
     return html`
-      <div class="slider-wrapper">
-        <div class="slider-header">
-          ${this.component.label
-            ? html`<label for=${id}>${this.component.label}</label>`
-            : html`<span></span>`
-          }
-          <span class="slider-value">${value}</span>
-        </div>
+      <div class="slider-wrapper" style=${thumbStyle}>
+        ${hasHeader ? html`
+          <div class="slider-header">
+            ${this.component.label
+              ? html`<label for=${id}>${this.component.label}</label>`
+              : html`<span></span>`
+            }
+            ${showValue ? html`<span class="slider-value">${value}</span>` : nothing}
+          </div>
+        ` : nothing}
         <input
           type="range"
           id=${id}
@@ -137,6 +166,7 @@ export class CcSlider extends LitElement {
           step=${step}
           ?disabled=${this.component.disabled}
           @input=${this.handleInput}
+          style=${sliderStyle}
         />
       </div>
     `;

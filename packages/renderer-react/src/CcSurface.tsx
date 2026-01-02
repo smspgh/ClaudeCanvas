@@ -6,6 +6,7 @@ import type {
   AgentToClientMessage,
   UserActionMessage,
   Action,
+  VisibilityCondition,
 } from '@claude-canvas/core';
 import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
 
@@ -30,6 +31,14 @@ import { CcCard } from './components/CcCard.js';
 import { CcDivider } from './components/CcDivider.js';
 import { CcModal } from './components/CcModal.js';
 import { CcTabs } from './components/CcTabs.js';
+import { CcProgress } from './components/CcProgress.js';
+import { CcBadge } from './components/CcBadge.js';
+import { CcAvatar } from './components/CcAvatar.js';
+import { CcToast } from './components/CcToast.js';
+import { CcAccordion } from './components/CcAccordion.js';
+import { CcSkeleton } from './components/CcSkeleton.js';
+import { CcAlert } from './components/CcAlert.js';
+import { CcTooltip } from './components/CcTooltip.js';
 
 export interface CcSurfaceProps {
   /** The surface definition to render */
@@ -87,7 +96,25 @@ export function CcSurface({
 
   const isVisible = (component: Component): boolean => {
     if (!component.visibleIf) return true;
-    const value = getByPointer(dataModel, component.visibleIf);
+
+    // Simple string path - truthy check
+    if (typeof component.visibleIf === 'string') {
+      const value = getByPointer(dataModel, component.visibleIf);
+      return Boolean(value);
+    }
+
+    // Object syntax with comparison operators
+    const condition = component.visibleIf as VisibilityCondition;
+    const value = getByPointer(dataModel, condition.path);
+
+    if (condition.eq !== undefined) return value === condition.eq;
+    if (condition.neq !== undefined) return value !== condition.neq;
+    if (condition.gt !== undefined) return typeof value === 'number' && value > condition.gt;
+    if (condition.gte !== undefined) return typeof value === 'number' && value >= condition.gte;
+    if (condition.lt !== undefined) return typeof value === 'number' && value < condition.lt;
+    if (condition.lte !== undefined) return typeof value === 'number' && value <= condition.lte;
+
+    // Default to truthy check if no operator specified
     return Boolean(value);
   };
 
@@ -251,6 +278,57 @@ export function CcSurface({
             onInput={handleInput}
             renderChildren={(children) => children.map((child, i) => renderComponent(child, i))}
           />
+        );
+
+      case 'Progress':
+        return <CcProgress key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'Badge':
+        return <CcBadge key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'Avatar':
+        return <CcAvatar key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'Toast':
+        return (
+          <CcToast
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+            onAction={handleAction}
+          />
+        );
+
+      case 'Accordion':
+        return (
+          <CcAccordion
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+            renderChildren={(children) => children.map((child, i) => renderComponent(child, i))}
+          />
+        );
+
+      case 'Skeleton':
+        return <CcSkeleton key={componentKey} component={component} dataModel={dataModel} />;
+
+      case 'Alert':
+        return (
+          <CcAlert
+            key={componentKey}
+            component={component}
+            dataModel={dataModel}
+            onInput={handleInput}
+          />
+        );
+
+      case 'Tooltip':
+        return (
+          <CcTooltip key={componentKey} component={component} dataModel={dataModel}>
+            {component.children.map((child, i) => renderComponent(child, i))}
+          </CcTooltip>
         );
 
       default:

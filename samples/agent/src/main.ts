@@ -26,6 +26,11 @@ const emptyStateReact = document.getElementById('empty-state-react') as HTMLDivE
 const loading = document.getElementById('loading') as HTMLDivElement;
 const jsonOutput = document.getElementById('json-output') as HTMLDivElement;
 const serverStatus = document.getElementById('server-status') as HTMLDivElement;
+const copyJsonBtn = document.getElementById('copy-json') as HTMLButtonElement;
+const mainContent = document.getElementById('main-content') as HTMLDivElement;
+const litPanel = document.getElementById('lit-panel') as HTMLDivElement;
+const reactPanel = document.getElementById('react-panel') as HTMLDivElement;
+const viewToggleBtns = document.querySelectorAll('.view-btn') as NodeListOf<HTMLButtonElement>;
 
 // React state
 let reactRoot: Root | null = null;
@@ -566,6 +571,52 @@ surfaceLit.addEventListener('cc-user-action', async (e: Event) => {
   const detail = (e as CustomEvent).detail;
   console.log('Lit action:', detail);
   alert(`Lit Action: ${detail.action.type}\nData: ${JSON.stringify(detail.dataModel, null, 2)}`);
+});
+
+// Copy JSON button
+copyJsonBtn.addEventListener('click', async () => {
+  const jsonText = jsonOutput.textContent ?? '';
+  if (jsonText && jsonText !== '// Generated JSON will appear here') {
+    try {
+      await navigator.clipboard.writeText(jsonText);
+      copyJsonBtn.textContent = 'Copied!';
+      copyJsonBtn.classList.add('copied');
+      setTimeout(() => {
+        copyJsonBtn.textContent = 'Copy JSON';
+        copyJsonBtn.classList.remove('copied');
+      }, 2000);
+    } catch {
+      console.error('Failed to copy JSON');
+    }
+  }
+});
+
+// View toggle
+let currentView = 'both';
+viewToggleBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view ?? 'both';
+    currentView = view;
+
+    // Update button states
+    viewToggleBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Update layout
+    if (view === 'both') {
+      mainContent.classList.remove('single-view');
+      litPanel.style.display = '';
+      reactPanel.style.display = '';
+    } else if (view === 'lit') {
+      mainContent.classList.add('single-view');
+      litPanel.style.display = '';
+      reactPanel.style.display = 'none';
+    } else if (view === 'react') {
+      mainContent.classList.add('single-view');
+      litPanel.style.display = 'none';
+      reactPanel.style.display = '';
+    }
+  });
 });
 
 // Initialize

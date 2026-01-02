@@ -50,8 +50,8 @@ export const COMPONENT_CATALOG = `
 - **Select**: Dropdown selection
   \`{"component":"Select","valuePath":"/form/country","label":"Country","placeholder":"Select...","options":[{"label":"USA","value":"us"},{"label":"UK","value":"uk"}]}\`
 
-- **Slider**: Numeric range input
-  \`{"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1}\`
+- **Slider**: Numeric range input with optional custom colors
+  \`{"component":"Slider","valuePath":"/form/volume","label":"Volume","min":0,"max":100,"step":1,"trackColor":"#2d2d44","fillColor":"#8b5cf6"}\`
 
 - **DateTimeInput**: Date and/or time picker
   \`{"component":"DateTimeInput","valuePath":"/form/date","label":"Select Date","enableDate":true,"enableTime":false,"minDate":"2024-01-01","maxDate":"2025-12-31"}\`
@@ -81,7 +81,40 @@ export const COMPONENT_CATALOG = `
 - **RichTextEditor**: WYSIWYG text editor
   \`{"component":"RichTextEditor","valuePath":"/form/content","placeholder":"Write something...","minHeight":200,"toolbar":["bold","italic","underline","heading","list","link","code"]}\`
 
+### Feedback Components
+- **Progress**: Linear or circular progress indicator
+  \`{"component":"Progress","valuePath":"/loading/progress","variant":"linear|circular","size":"small|medium|large","color":"#3b82f6","showLabel":true}\`
+  Indeterminate mode (no value): \`{"component":"Progress","variant":"circular"}\`
+
+- **Badge**: Status label or count
+  \`{"component":"Badge","content":"New","variant":"default|success|warning|error|info","size":"small|medium|large","pill":true}\`
+  Dot indicator: \`{"component":"Badge","dot":true,"variant":"error"}\`
+  Dynamic content: \`{"component":"Badge","contentPath":"/notifications/count","variant":"error"}\`
+
+- **Avatar**: User profile image with fallback
+  \`{"component":"Avatar","src":"https://...","alt":"User","size":"small|medium|large","shape":"circle|square|rounded"}\`
+  With initials fallback: \`{"component":"Avatar","initials":"JD","color":"#3b82f6"}\`
+  With status: \`{"component":"Avatar","srcPath":"/user/avatar","status":"online|offline|busy|away"}\`
+
+- **Toast**: Notification message (auto-dismiss)
+  \`{"component":"Toast","openPath":"/ui/showToast","message":"Saved!","variant":"info|success|warning|error","position":"bottom-right","duration":5000,"dismissible":true}\`
+  With action: \`{"component":"Toast","openPath":"/ui/toast","message":"Item deleted","actionLabel":"Undo","action":{"type":"custom","event":"undo"}}\`
+
+- **Alert**: Inline alert message
+  \`{"component":"Alert","message":"This is important","variant":"info|success|warning|error","title":"Note","dismissible":true,"openPath":"/ui/showAlert"}\`
+
+- **Skeleton**: Loading placeholder
+  \`{"component":"Skeleton","variant":"text|circular|rectangular","width":200,"height":40,"animation":"pulse|wave"}\`
+  Multiple text lines: \`{"component":"Skeleton","variant":"text","lines":3}\`
+
+- **Tooltip**: Hover information
+  \`{"component":"Tooltip","content":"More info","position":"top|bottom|left|right","delay":200,"children":[...]}\`
+
 ### Interactive Components
+- **Accordion**: Expandable sections
+  \`{"component":"Accordion","items":[{"id":"sec1","title":"Section 1","children":[...]},{"id":"sec2","title":"Section 2","subtitle":"More info","children":[...]}],"allowMultiple":false,"variant":"default|bordered|separated"}\`
+  Controlled: \`{"component":"Accordion","expandedPath":"/ui/expanded","items":[...]}\`
+
 - **Button**: Clickable button with action
   \`{"component":"Button","label":"Submit","variant":"primary|secondary|outline|ghost|danger","icon":"send","action":{"type":"submit"}}\`
 
@@ -97,7 +130,10 @@ Components bind to the data model using JSON Pointer paths:
 - \`contentPath\`: Binds display content to data model path
 - \`srcPath\`: Binds image source to data model path
 - \`openPath\`: Binds modal open state to boolean in data model
-- \`visibleIf\`: Conditionally show component based on data model path (truthy value)
+- \`visibleIf\`: Conditionally show component. Can be:
+  - String path for truthy check: \`"visibleIf": "/ui/showComponent"\`
+  - Object with comparison: \`"visibleIf": {"path": "/player/isPlaying", "eq": false}\`
+  - Supported operators: \`eq\`, \`neq\`, \`gt\`, \`gte\`, \`lt\`, \`lte\`
 
 ## Common Styling Properties
 
@@ -192,21 +228,44 @@ Always respond with a JSON array of messages. Start with dataModelUpdate to init
 
 ## Examples
 
-### Simple Form
+### Media Player (Dark Theme)
 \`\`\`json
 [
-  {"type": "dataModelUpdate", "path": "/", "data": {"form": {"name": "", "email": ""}}},
+  {"type": "dataModelUpdate", "path": "/", "data": {"player": {"isPlaying": false, "progress": 35, "volume": 80, "currentTime": "1:24", "totalTime": "4:02", "track": {"title": "Midnight City", "artist": "M83", "album": "Hurry Up, We're Dreaming", "albumArt": "https://picsum.photos/seed/album/300"}}}},
   {
     "type": "surfaceUpdate",
     "surface": {
-      "id": "contact",
-      "title": "Contact Form",
+      "id": "main",
+      "title": "Now Playing",
       "components": [
-        {"component": "Card", "elevated": true, "children": [
-          {"component": "Column", "gap": 16, "children": [
-            {"component": "TextField", "valuePath": "/form/name", "label": "Name", "placeholder": "Your name"},
-            {"component": "TextField", "valuePath": "/form/email", "label": "Email", "inputType": "email"},
-            {"component": "Button", "label": "Submit", "variant": "primary", "action": {"type": "submit"}}
+        {"component": "Card", "elevated": true, "style": {"backgroundColor": "#1a1a2e", "padding": 24, "borderRadius": 16}, "children": [
+          {"component": "Column", "gap": 20, "children": [
+            {"component": "Row", "gap": 16, "align": "center", "children": [
+              {"component": "Image", "srcPath": "/player/track/albumArt", "alt": "Album artwork", "fit": "cover", "style": {"width": 80, "height": 80, "borderRadius": 8}},
+              {"component": "Column", "gap": 4, "children": [
+                {"component": "Text", "contentPath": "/player/track/title", "textStyle": "heading2", "style": {"color": "#ffffff"}},
+                {"component": "Text", "contentPath": "/player/track/artist", "textStyle": "body", "style": {"color": "#a0a0b0"}},
+                {"component": "Text", "contentPath": "/player/track/album", "textStyle": "caption", "style": {"color": "#6b6b80"}}
+              ]}
+            ]},
+            {"component": "Column", "gap": 8, "children": [
+              {"component": "Slider", "valuePath": "/player/progress", "min": 0, "max": 100, "trackColor": "#2d2d44", "fillColor": "#8b5cf6"},
+              {"component": "Row", "justify": "spaceBetween", "children": [
+                {"component": "Text", "contentPath": "/player/currentTime", "textStyle": "caption", "style": {"color": "#6b6b80"}},
+                {"component": "Text", "contentPath": "/player/totalTime", "textStyle": "caption", "style": {"color": "#6b6b80"}}
+              ]}
+            ]},
+            {"component": "Row", "gap": 16, "justify": "center", "align": "center", "children": [
+              {"component": "Button", "label": "⏮", "variant": "ghost", "style": {"color": "#a0a0b0"}, "action": {"type": "update", "path": "/player/command", "value": "previous"}},
+              {"component": "Button", "label": "▶", "variant": "primary", "style": {"backgroundColor": "#8b5cf6", "borderRadius": 24, "width": 48, "height": 48}, "visibleIf": {"path": "/player/isPlaying", "eq": false}, "action": {"type": "update", "path": "/player/isPlaying", "value": true}},
+              {"component": "Button", "label": "⏸", "variant": "primary", "style": {"backgroundColor": "#8b5cf6", "borderRadius": 24, "width": 48, "height": 48}, "visibleIf": {"path": "/player/isPlaying", "eq": true}, "action": {"type": "update", "path": "/player/isPlaying", "value": false}},
+              {"component": "Button", "label": "⏭", "variant": "ghost", "style": {"color": "#a0a0b0"}, "action": {"type": "update", "path": "/player/command", "value": "next"}}
+            ]},
+            {"component": "Row", "gap": 12, "align": "center", "children": [
+              {"component": "Text", "content": "🔈", "style": {"color": "#6b6b80"}},
+              {"component": "Slider", "valuePath": "/player/volume", "min": 0, "max": 100, "trackColor": "#2d2d44", "fillColor": "#8b5cf6", "style": {"flex": 1}},
+              {"component": "Text", "content": "🔊", "style": {"color": "#6b6b80"}}
+            ]}
           ]}
         ]}
       ]

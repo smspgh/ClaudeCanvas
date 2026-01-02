@@ -33,22 +33,17 @@ export class CcCard extends LitElement {
   @property({ type: Object })
   dataModel: DataModel = {};
 
-  updated() {
-    // Apply component style to host element for flex layout support
-    if (this.component.style) {
-      const styleStr = styleToString(this.component.style);
-      this.style.cssText = styleStr;
-    }
-  }
-
   render() {
     const classes = {
       card: true,
       elevated: this.component.elevated ?? false,
     };
 
+    // Apply component style directly to card div (not host) so it overrides defaults
+    const cardStyle = this.component.style ? styleToString(this.component.style) : '';
+
     return html`
-      <div class=${classMap(classes)}>
+      <div class=${classMap(classes)} style=${cardStyle}>
         <slot></slot>
       </div>
     `;

@@ -15,10 +15,22 @@ export class CcImage extends LitElement {
       border-radius: var(--cc-image-radius, 0.375rem);
     }
 
+    .image-wrapper.sized {
+      display: inline-block;
+    }
+
     img {
       display: block;
+    }
+
+    img.auto-size {
       width: 100%;
       height: auto;
+    }
+
+    img.fixed-size {
+      width: 100%;
+      height: 100%;
     }
 
     img.cover {
@@ -102,6 +114,13 @@ export class CcImage extends LitElement {
     const src = this.getSrc();
     const fit = this.component.fit ?? 'cover';
     const alt = this.component.alt ?? '';
+    const style = this.component.style as Record<string, unknown> | undefined;
+
+    // Check if dimensions are specified in style
+    const hasSize = style?.width || style?.height;
+    const wrapperStyle = hasSize
+      ? `width: ${style?.width ?? 'auto'}${typeof style?.width === 'number' ? 'px' : ''}; height: ${style?.height ?? 'auto'}${typeof style?.height === 'number' ? 'px' : ''}; border-radius: ${style?.borderRadius ?? 0}${typeof style?.borderRadius === 'number' ? 'px' : ''};`
+      : '';
 
     if (!src) {
       return this.renderPlaceholder('No image');
@@ -112,11 +131,11 @@ export class CcImage extends LitElement {
     }
 
     return html`
-      <div class="image-wrapper">
+      <div class="image-wrapper ${hasSize ? 'sized' : ''}" style=${wrapperStyle}>
         <img
           src=${src}
           alt=${alt}
-          class=${fit}
+          class="${fit} ${hasSize ? 'fixed-size' : 'auto-size'}"
           loading="lazy"
           @error=${this.handleError}
           @load=${this.handleLoad}

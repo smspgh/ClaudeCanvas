@@ -21,6 +21,7 @@ function styleToCSS(style?: ComponentStyle): CSSProperties {
   }
 
   if (style.backgroundColor) css.backgroundColor = style.backgroundColor;
+  if (style.background) css.background = style.background;
   if (style.borderRadius) css.borderRadius = style.borderRadius;
   if (style.borderColor) css.borderColor = style.borderColor;
   if (style.borderWidth) css.borderWidth = style.borderWidth;

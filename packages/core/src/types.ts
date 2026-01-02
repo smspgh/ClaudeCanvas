@@ -17,6 +17,29 @@ export type SurfaceId = string;
 export type ComponentId = string;
 
 // =============================================================================
+// Conditional Visibility
+// =============================================================================
+
+/** Comparison operators for conditional visibility */
+export type VisibilityOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
+
+/** Object-based visibility condition with comparison operator */
+export interface VisibilityCondition {
+  /** JSON pointer to the value to check */
+  path: JsonPointer;
+  /** Comparison operator (default: truthy check if omitted) */
+  eq?: unknown;
+  neq?: unknown;
+  gt?: number;
+  gte?: number;
+  lt?: number;
+  lte?: number;
+}
+
+/** Visibility can be a simple path (truthy check) or a condition object */
+export type VisibleIf = JsonPointer | VisibilityCondition;
+
+// =============================================================================
 // Styling
 // =============================================================================
 
@@ -39,6 +62,8 @@ export interface ComponentStyle {
   padding?: Spacing | number;
   margin?: Spacing | number;
   backgroundColor?: string;
+  /** CSS background property (supports gradients) */
+  background?: string;
   borderRadius?: number;
   borderColor?: string;
   borderWidth?: number;
@@ -77,8 +102,8 @@ export interface Action {
 interface BaseComponent {
   id?: ComponentId;
   style?: ComponentStyle;
-  /** Conditional rendering based on data model */
-  visibleIf?: JsonPointer;
+  /** Conditional rendering based on data model - can be a path (truthy check) or condition object */
+  visibleIf?: VisibleIf;
 }
 
 // Layout Components
@@ -200,6 +225,12 @@ export interface SliderComponent extends BaseComponent {
   max?: number;
   step?: number;
   disabled?: boolean;
+  /** Custom track color (unfilled portion) */
+  trackColor?: string;
+  /** Custom fill color (filled portion and thumb) */
+  fillColor?: string;
+  /** Show value label (default: true) */
+  showValue?: boolean;
 }
 
 export interface DateTimeInputComponent extends BaseComponent {
@@ -363,6 +394,175 @@ export interface ListComponent extends BaseComponent {
   emptyMessage?: string;
 }
 
+// Progress/Spinner Components
+export interface ProgressComponent extends BaseComponent {
+  component: 'Progress';
+  /** Progress value (0-100), omit for indeterminate */
+  value?: number;
+  /** JSON pointer to progress value */
+  valuePath?: JsonPointer;
+  /** Progress variant */
+  variant?: 'linear' | 'circular';
+  /** Size for circular variant */
+  size?: 'small' | 'medium' | 'large';
+  /** Color of the progress indicator */
+  color?: string;
+  /** Track/background color */
+  trackColor?: string;
+  /** Show percentage label */
+  showLabel?: boolean;
+  /** Label text (defaults to percentage) */
+  label?: string;
+}
+
+// Badge/Chip Components
+export interface BadgeComponent extends BaseComponent {
+  component: 'Badge';
+  /** Badge text content */
+  content?: string;
+  /** JSON pointer to dynamic content */
+  contentPath?: JsonPointer;
+  /** Badge variant */
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
+  /** Badge size */
+  size?: 'small' | 'medium' | 'large';
+  /** Custom background color (overrides variant) */
+  color?: string;
+  /** Custom text color */
+  textColor?: string;
+  /** Make badge pill-shaped (fully rounded) */
+  pill?: boolean;
+  /** Show dot indicator only (no text) */
+  dot?: boolean;
+  /** Icon name to show before text */
+  icon?: string;
+}
+
+// Avatar Components
+export interface AvatarComponent extends BaseComponent {
+  component: 'Avatar';
+  /** Image source URL */
+  src?: string;
+  /** JSON pointer to dynamic image source */
+  srcPath?: JsonPointer;
+  /** Alt text for image */
+  alt?: string;
+  /** Fallback initials when no image */
+  initials?: string;
+  /** JSON pointer to dynamic initials */
+  initialsPath?: JsonPointer;
+  /** Avatar size */
+  size?: 'small' | 'medium' | 'large' | number;
+  /** Avatar shape */
+  shape?: 'circle' | 'square' | 'rounded';
+  /** Background color for initials fallback */
+  color?: string;
+  /** Show online/offline status indicator */
+  status?: 'online' | 'offline' | 'busy' | 'away';
+}
+
+// Toast/Snackbar Components
+export interface ToastComponent extends BaseComponent {
+  component: 'Toast';
+  /** JSON pointer to boolean controlling visibility */
+  openPath: JsonPointer;
+  /** Toast message */
+  message?: string;
+  /** JSON pointer to dynamic message */
+  messagePath?: JsonPointer;
+  /** Toast type/severity */
+  variant?: 'info' | 'success' | 'warning' | 'error';
+  /** Position on screen */
+  position?: 'top' | 'top-left' | 'top-right' | 'bottom' | 'bottom-left' | 'bottom-right';
+  /** Auto-dismiss duration in milliseconds (0 = no auto-dismiss) */
+  duration?: number;
+  /** Show close button */
+  dismissible?: boolean;
+  /** Action button label */
+  actionLabel?: string;
+  /** Action to perform when action button clicked */
+  action?: Action;
+}
+
+// Accordion Components
+export interface AccordionItem {
+  /** Unique identifier for the item */
+  id: string;
+  /** Header/title text */
+  title: string;
+  /** Optional subtitle */
+  subtitle?: string;
+  /** Optional icon */
+  icon?: string;
+  /** Content components */
+  children: Component[];
+  /** Initially expanded */
+  defaultExpanded?: boolean;
+  /** Disabled state */
+  disabled?: boolean;
+}
+
+export interface AccordionComponent extends BaseComponent {
+  component: 'Accordion';
+  /** Accordion items */
+  items: AccordionItem[];
+  /** Allow multiple items to be expanded */
+  allowMultiple?: boolean;
+  /** JSON pointer to store expanded item IDs */
+  expandedPath?: JsonPointer;
+  /** Visual variant */
+  variant?: 'default' | 'bordered' | 'separated';
+}
+
+// Skeleton/Loading Placeholder
+export interface SkeletonComponent extends BaseComponent {
+  component: 'Skeleton';
+  /** Skeleton variant */
+  variant?: 'text' | 'circular' | 'rectangular';
+  /** Width (defaults to 100%) */
+  width?: string | number;
+  /** Height (required for rectangular, optional for others) */
+  height?: string | number;
+  /** Number of text lines (for text variant) */
+  lines?: number;
+  /** Animation type */
+  animation?: 'pulse' | 'wave' | 'none';
+}
+
+// Tooltip Component
+export interface TooltipComponent extends BaseComponent {
+  component: 'Tooltip';
+  /** Tooltip content text */
+  content: string;
+  /** Position relative to children */
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  /** Delay before showing (ms) */
+  delay?: number;
+  /** Child component to wrap */
+  children: Component[];
+}
+
+// Alert/Callout Component
+export interface AlertComponent extends BaseComponent {
+  component: 'Alert';
+  /** Alert title */
+  title?: string;
+  /** Alert message/description */
+  message: string;
+  /** JSON pointer to dynamic message */
+  messagePath?: JsonPointer;
+  /** Alert severity/variant */
+  variant?: 'info' | 'success' | 'warning' | 'error';
+  /** Show icon */
+  showIcon?: boolean;
+  /** Dismissible */
+  dismissible?: boolean;
+  /** JSON pointer to control visibility */
+  openPath?: JsonPointer;
+  /** Optional action buttons */
+  actions?: Component[];
+}
+
 // Union of all components
 export type Component =
   | RowComponent
@@ -387,7 +587,15 @@ export type Component =
   | RichTextEditorComponent
   | ButtonComponent
   | LinkComponent
-  | ListComponent;
+  | ListComponent
+  | ProgressComponent
+  | BadgeComponent
+  | AvatarComponent
+  | ToastComponent
+  | AccordionComponent
+  | SkeletonComponent
+  | TooltipComponent
+  | AlertComponent;
 
 // =============================================================================
 // Surface (Top-level UI container)

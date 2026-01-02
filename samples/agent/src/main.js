@@ -20,6 +20,11 @@ const emptyStateReact = document.getElementById('empty-state-react');
 const loading = document.getElementById('loading');
 const jsonOutput = document.getElementById('json-output');
 const serverStatus = document.getElementById('server-status');
+const copyJsonBtn = document.getElementById('copy-json');
+const mainContent = document.getElementById('main-content');
+const litPanel = document.getElementById('lit-panel');
+const reactPanel = document.getElementById('react-panel');
+const viewToggleBtns = document.querySelectorAll('.view-btn');
 // React state
 let reactRoot = null;
 let reactSurface = null;
@@ -548,6 +553,51 @@ surfaceLit.addEventListener('cc-user-action', async (e) => {
     const detail = e.detail;
     console.log('Lit action:', detail);
     alert(`Lit Action: ${detail.action.type}\nData: ${JSON.stringify(detail.dataModel, null, 2)}`);
+});
+// Copy JSON button
+copyJsonBtn.addEventListener('click', async () => {
+    const jsonText = jsonOutput.textContent ?? '';
+    if (jsonText && jsonText !== '// Generated JSON will appear here') {
+        try {
+            await navigator.clipboard.writeText(jsonText);
+            copyJsonBtn.textContent = 'Copied!';
+            copyJsonBtn.classList.add('copied');
+            setTimeout(() => {
+                copyJsonBtn.textContent = 'Copy JSON';
+                copyJsonBtn.classList.remove('copied');
+            }, 2000);
+        }
+        catch {
+            console.error('Failed to copy JSON');
+        }
+    }
+});
+// View toggle
+let currentView = 'both';
+viewToggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const view = btn.dataset.view ?? 'both';
+        currentView = view;
+        // Update button states
+        viewToggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Update layout
+        if (view === 'both') {
+            mainContent.classList.remove('single-view');
+            litPanel.style.display = '';
+            reactPanel.style.display = '';
+        }
+        else if (view === 'lit') {
+            mainContent.classList.add('single-view');
+            litPanel.style.display = '';
+            reactPanel.style.display = 'none';
+        }
+        else if (view === 'react') {
+            mainContent.classList.add('single-view');
+            litPanel.style.display = 'none';
+            reactPanel.style.display = '';
+        }
+    });
 });
 // Initialize
 (async () => {

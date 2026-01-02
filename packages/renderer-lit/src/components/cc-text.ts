@@ -73,9 +73,41 @@ export class CcText extends LitElement {
     return this.component.textStyle ?? 'body';
   }
 
+  private getInlineStyle(): string {
+    const styles: string[] = [];
+    const componentStyle = this.component.style as Record<string, unknown> | undefined;
+
+    // Check both component.color and style.color
+    const color = this.component.color ?? componentStyle?.color;
+    if (color) {
+      styles.push(`color: ${color}`);
+    }
+
+    // Apply fontWeight from style
+    if (componentStyle?.fontWeight) {
+      styles.push(`font-weight: ${componentStyle.fontWeight}`);
+    }
+
+    // Apply fontSize from style
+    if (componentStyle?.fontSize) {
+      const fontSize = typeof componentStyle.fontSize === 'number'
+        ? `${componentStyle.fontSize}px`
+        : componentStyle.fontSize;
+      styles.push(`font-size: ${fontSize}`);
+    }
+
+    // Apply textAlign from style
+    if (componentStyle?.textAlign) {
+      styles.push(`text-align: ${componentStyle.textAlign}`);
+    }
+
+    return styles.join('; ');
+  }
+
   render() {
     const content = this.getContent();
     const styleClass = this.getStyleClass();
+    const inlineStyle = this.getInlineStyle();
 
     // For markdown, we'd need a markdown parser - keeping simple for now
     if (this.component.markdown) {
@@ -84,10 +116,10 @@ export class CcText extends LitElement {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`(.*?)`/g, '<code>$1</code>');
-      return html`<p class=${styleClass}>${unsafeHTML(rendered)}</p>`;
+      return html`<p class=${styleClass} style=${inlineStyle}>${unsafeHTML(rendered)}</p>`;
     }
 
-    return html`<p class=${styleClass} style=${this.component.color ? `color: ${this.component.color}` : ''}>${content}</p>`;
+    return html`<p class=${styleClass} style=${inlineStyle}>${content}</p>`;
   }
 }
 

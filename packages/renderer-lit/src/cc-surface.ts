@@ -7,6 +7,7 @@ import type {
   AgentToClientMessage,
   UserActionMessage,
   Action,
+  VisibilityCondition,
 } from '@claude-canvas/core';
 import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
 
@@ -104,7 +105,25 @@ export class CcSurface extends LitElement {
 
   private isVisible(component: Component): boolean {
     if (!component.visibleIf) return true;
-    const value = getByPointer(this.dataModel, component.visibleIf);
+
+    // Simple string path - truthy check
+    if (typeof component.visibleIf === 'string') {
+      const value = getByPointer(this.dataModel, component.visibleIf);
+      return Boolean(value);
+    }
+
+    // Object syntax with comparison operators
+    const condition = component.visibleIf as VisibilityCondition;
+    const value = getByPointer(this.dataModel, condition.path);
+
+    if (condition.eq !== undefined) return value === condition.eq;
+    if (condition.neq !== undefined) return value !== condition.neq;
+    if (condition.gt !== undefined) return typeof value === 'number' && value > condition.gt;
+    if (condition.gte !== undefined) return typeof value === 'number' && value >= condition.gte;
+    if (condition.lt !== undefined) return typeof value === 'number' && value < condition.lt;
+    if (condition.lte !== undefined) return typeof value === 'number' && value <= condition.lte;
+
+    // Default to truthy check if no operator specified
     return Boolean(value);
   }
 
@@ -200,6 +219,40 @@ export class CcSurface extends LitElement {
           </cc-tabs>
         `;
       }
+
+      case 'Progress':
+        return html`<cc-progress .component=${component} .dataModel=${this.dataModel}></cc-progress>`;
+
+      case 'Badge':
+        return html`<cc-badge .component=${component} .dataModel=${this.dataModel}></cc-badge>`;
+
+      case 'Avatar':
+        return html`<cc-avatar .component=${component} .dataModel=${this.dataModel}></cc-avatar>`;
+
+      case 'Toast':
+        return html`<cc-toast .component=${component} .dataModel=${this.dataModel}></cc-toast>`;
+
+      case 'Accordion':
+        return html`
+          <cc-accordion .component=${component} .dataModel=${this.dataModel}>
+            ${component.items.map(item =>
+              item.children.map(child => this.renderComponent(child))
+            )}
+          </cc-accordion>
+        `;
+
+      case 'Skeleton':
+        return html`<cc-skeleton .component=${component} .dataModel=${this.dataModel}></cc-skeleton>`;
+
+      case 'Alert':
+        return html`<cc-alert .component=${component} .dataModel=${this.dataModel}></cc-alert>`;
+
+      case 'Tooltip':
+        return html`
+          <cc-tooltip .component=${component} .dataModel=${this.dataModel}>
+            ${component.children.map(child => this.renderComponent(child))}
+          </cc-tooltip>
+        `;
 
       default:
         console.warn(`Unknown component type: ${(component as Component).component}`);

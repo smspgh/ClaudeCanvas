@@ -218,26 +218,128 @@ export class StreamingJsonParser {
 /**
  * Parse a complete JSON string containing ClaudeCanvas messages
  * Handles various formats (array, single object, markdown-wrapped)
+ * Includes recovery for truncated responses
  */
 export function parseMessages(text: string): AgentToClientMessage[] {
-  // Try to extract JSON from markdown code blocks
-  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  let jsonString = jsonMatch ? jsonMatch[1] : text;
+  let jsonString = text;
+  let extractionMethod = 'raw';
 
-  // Also try to find raw JSON array
-  if (!jsonMatch) {
-    const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (arrayMatch) {
-      jsonString = arrayMatch[0];
+  // Try to extract JSON from complete markdown code blocks
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (jsonMatch) {
+    jsonString = jsonMatch[1];
+    extractionMethod = 'complete-code-block';
+  } else {
+    // Handle unclosed markdown code blocks (truncated responses)
+    const unclosedMatch = text.match(/```(?:json)?\s*([\s\S]*)/);
+    if (unclosedMatch) {
+      jsonString = unclosedMatch[1];
+      extractionMethod = 'unclosed-code-block';
     }
   }
 
-  try {
-    const parsed = JSON.parse(jsonString.trim());
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch {
-    throw new Error('Failed to parse ClaudeCanvas messages');
+  // Also try to find raw JSON array if still has code block markers
+  if (extractionMethod !== 'complete-code-block') {
+    const arrayMatch = jsonString.match(/(\[\s*\{[\s\S]*\}\s*\])/);
+    if (arrayMatch) {
+      jsonString = arrayMatch[1];
+      extractionMethod = 'array-extraction';
+    }
   }
+
+  // Strip any trailing incomplete content after the array
+  jsonString = jsonString.trim();
+
+  // Remove any trailing incomplete JSON - find last complete object/array
+  // This helps when the response is truncated mid-value
+  const lastBracket = jsonString.lastIndexOf(']');
+  if (lastBracket > 0 && !jsonString.endsWith(']')) {
+    jsonString = jsonString.substring(0, lastBracket + 1);
+    extractionMethod += '+truncation-fix';
+  }
+
+  // First attempt: try to parse as-is
+  try {
+    const parsed = JSON.parse(jsonString);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (firstError) {
+    // Recovery attempt: try to find and extract complete messages
+    const messages = tryRecoverMessages(jsonString);
+    if (messages.length > 0) {
+      console.warn(`[parseMessages] Recovered ${messages.length} message(s) from truncated JSON`);
+      return messages;
+    }
+
+    // If recovery failed, report the error
+    const errorMsg = firstError instanceof Error ? firstError.message : 'Unknown error';
+    console.error(`[parseMessages] JSON parse failed (${extractionMethod}):`, errorMsg);
+    console.error(`[parseMessages] Input length: ${text.length}, extracted length: ${jsonString.length}`);
+    console.error(`[parseMessages] First 200 chars: ${jsonString.substring(0, 200)}`);
+    console.error(`[parseMessages] Last 200 chars: ${jsonString.substring(Math.max(0, jsonString.length - 200))}`);
+    throw new Error(`Failed to parse ClaudeCanvas messages (${extractionMethod}): ${errorMsg}`);
+  }
+}
+
+/**
+ * Try to recover individual messages from truncated JSON array
+ */
+function tryRecoverMessages(jsonString: string): AgentToClientMessage[] {
+  const messages: AgentToClientMessage[] = [];
+
+  // Find all top-level objects in the array by tracking bracket depth
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+  let objectStart = -1;
+
+  for (let i = 0; i < jsonString.length; i++) {
+    const char = jsonString[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === '\\' && inString) {
+      escapeNext = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === '[' && depth === 0) {
+      // Start of array
+      depth = 1;
+      continue;
+    }
+
+    if (char === '{') {
+      if (depth === 1 && objectStart === -1) {
+        objectStart = i;
+      }
+      depth++;
+    } else if (char === '}') {
+      depth--;
+      if (depth === 1 && objectStart !== -1) {
+        // Found a complete top-level object
+        const objectStr = jsonString.substring(objectStart, i + 1);
+        try {
+          const msg = JSON.parse(objectStr) as AgentToClientMessage;
+          messages.push(msg);
+        } catch {
+          // Skip malformed object
+        }
+        objectStart = -1;
+      }
+    }
+  }
+
+  return messages;
 }
 
 /**
