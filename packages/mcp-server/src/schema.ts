@@ -28,6 +28,11 @@ export const COMPONENT_CATALOG = `
 - **Tabs**: Tabbed interface with multiple panels
   \`{"component":"Tabs","valuePath":"/ui/activeTab","tabs":[{"label":"Tab 1","value":"tab1","children":[...]},{"label":"Tab 2","value":"tab2","children":[...]}]}\`
 
+- **List**: Iterate over array data with a template - USE THIS instead of hardcoding items!
+  \`{"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Card","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items"}\`
+  Inside the itemTemplate, use \`/item/fieldName\` to access each item's properties and \`/index\` for the position.
+  Example for chat messages: \`{"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text","style":{"color":"#fff"}}]}}\`
+
 ### Display Components
 - **Text**: Display text content with styling
   \`{"component":"Text","content":"Hello","textStyle":"heading1|heading2|heading3|body|caption|code","color":"#333","markdown":true}\`

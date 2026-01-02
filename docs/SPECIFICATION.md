@@ -194,6 +194,23 @@ Tabbed interface.
 }
 ```
 
+#### List
+Iterate over array data with a template. **Use this instead of hardcoding repeated items!**
+```json
+{
+  "component": "List",
+  "itemsPath": "/messages",
+  "itemTemplate": {
+    "component": "Card",
+    "children": [
+      {"component": "Text", "contentPath": "/item/text"}
+    ]
+  },
+  "emptyMessage": "No messages yet"
+}
+```
+Inside the `itemTemplate`, use `/item/fieldName` to access each item's properties and `/index` for the position.
+
 ### 3.2 Display Components
 
 #### Text

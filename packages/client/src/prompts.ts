@@ -34,6 +34,13 @@ Alert: {"component":"Alert","message":"Important","variant":"info|success|warnin
 Skeleton: {"component":"Skeleton","variant":"text|circular|rectangular","lines":3,"animation":"pulse|wave"}
 Tooltip: {"component":"Tooltip","content":"Hover info","position":"top","children":[...]}
 Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","children":[...]}],"allowMultiple":false}
+List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items"}
+
+IMPORTANT - USE List FOR DYNAMIC DATA:
+When rendering arrays (chat messages, todo items, product lists), use List component instead of hardcoding each item!
+Example - Chat messages from /messages array:
+{"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","justify":{"path":"/item/isMe","eq":true},"children":[{"component":"Card","style":{"backgroundColor":"#3B82F6"},"visibleIf":"/item/isMe","children":[{"component":"Text","contentPath":"/item/text"}]},{"component":"Card","style":{"backgroundColor":"#2D3748"},"visibleIf":{"path":"/item/isMe","eq":false},"children":[{"component":"Text","contentPath":"/item/text"}]}]}}
+Inside itemTemplate, use /item/fieldName to access each item's data, /index for position.
 
 CONDITIONAL VISIBILITY (show/hide based on state):
 visibleIf string (truthy): {"component":"Button","visibleIf":"/ui/showButton",...}
@@ -92,6 +99,7 @@ Always respond with a JSON array of messages:
 - Skeleton: Loading placeholder with variant (text/circular/rectangular)
 - Tooltip: Hover tooltip with position (top/bottom/left/right)
 - Accordion: Expandable sections with items array, allowMultiple
+- List: Iterate over array data with itemsPath and itemTemplate (use /item/field in template)
 `;
 
 export function getSystemPrompt(): string {

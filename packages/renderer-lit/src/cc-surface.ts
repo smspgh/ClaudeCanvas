@@ -8,6 +8,7 @@ import type {
   UserActionMessage,
   Action,
   VisibilityCondition,
+  ListComponent,
 } from '@claude-canvas/core';
 import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
 
@@ -124,6 +125,97 @@ export class CcSurface extends LitElement {
     if (condition.lte !== undefined) return typeof value === 'number' && value <= condition.lte;
 
     // Default to truthy check if no operator specified
+    return Boolean(value);
+  }
+
+  /**
+   * Render a List component by iterating over data and rendering template for each item
+   */
+  private renderList(component: ListComponent): TemplateResult | typeof nothing {
+    const items = getByPointer(this.dataModel, component.itemsPath) as unknown[];
+
+    if (!Array.isArray(items) || items.length === 0) {
+      if (component.emptyMessage) {
+        return html`<div class="list-empty">${component.emptyMessage}</div>`;
+      }
+      return nothing;
+    }
+
+    return html`
+      ${items.map((item, index) => {
+        // Create a scoped data model with /item and /index available
+        const scopedDataModel = {
+          ...this.dataModel,
+          item,
+          index,
+        };
+        return this.renderComponentWithDataModel(component.itemTemplate, scopedDataModel);
+      })}
+    `;
+  }
+
+  /**
+   * Render a component with a custom data model (used for List iteration)
+   */
+  private renderComponentWithDataModel(
+    component: Component,
+    dataModel: DataModel
+  ): TemplateResult | typeof nothing {
+    if (!this.isVisibleWithDataModel(component, dataModel)) return nothing;
+
+    switch (component.component) {
+      case 'Text':
+        return html`<cc-text .component=${component} .dataModel=${dataModel}></cc-text>`;
+      case 'Button':
+        return html`<cc-button .component=${component} .dataModel=${dataModel}></cc-button>`;
+      case 'Image':
+        return html`<cc-image .component=${component} .dataModel=${dataModel}></cc-image>`;
+      case 'Badge':
+        return html`<cc-badge .component=${component} .dataModel=${dataModel}></cc-badge>`;
+      case 'Avatar':
+        return html`<cc-avatar .component=${component} .dataModel=${dataModel}></cc-avatar>`;
+      case 'Row':
+        return html`
+          <cc-row .component=${component} .dataModel=${dataModel}>
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+          </cc-row>
+        `;
+      case 'Column':
+        return html`
+          <cc-column .component=${component} .dataModel=${dataModel}>
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+          </cc-column>
+        `;
+      case 'Card':
+        return html`
+          <cc-card .component=${component} .dataModel=${dataModel}>
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+          </cc-card>
+        `;
+      default:
+        // Fall back to regular rendering for other components
+        return this.renderComponent(component);
+    }
+  }
+
+  private isVisibleWithDataModel(component: Component, dataModel: DataModel): boolean {
+    if (!component.visibleIf) return true;
+
+    if (typeof component.visibleIf === 'string') {
+      const value = getByPointer(dataModel, component.visibleIf);
+      return Boolean(value);
+    }
+
+    const condition = component.visibleIf as VisibilityCondition;
+    const value = getByPointer(dataModel, condition.path);
+
+    if (condition.eq !== undefined) return value === condition.eq;
+    if (condition.neq !== undefined) return value !== condition.neq;
+    if (condition.gt !== undefined) return typeof value === 'number' && value > condition.gt;
+    if (condition.gte !== undefined) return typeof value === 'number' && value >= condition.gte;
+    if (condition.lt !== undefined) return typeof value === 'number' && value < condition.lt;
+    if (condition.lte !== undefined) return typeof value === 'number' && value <= condition.lte;
+
     return Boolean(value);
   }
 
@@ -253,6 +345,9 @@ export class CcSurface extends LitElement {
             ${component.children.map(child => this.renderComponent(child))}
           </cc-tooltip>
         `;
+
+      case 'List':
+        return this.renderList(component as ListComponent);
 
       default:
         console.warn(`Unknown component type: ${(component as Component).component}`);

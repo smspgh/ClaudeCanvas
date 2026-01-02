@@ -7,6 +7,7 @@ import type {
   UserActionMessage,
   Action,
   VisibilityCondition,
+  ListComponent,
 } from '@claude-canvas/core';
 import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
 
@@ -116,6 +117,100 @@ export function CcSurface({
 
     // Default to truthy check if no operator specified
     return Boolean(value);
+  };
+
+  // Check visibility with a custom data model (used for List iteration)
+  const isVisibleWithDataModel = (component: Component, dm: DataModel): boolean => {
+    if (!component.visibleIf) return true;
+
+    if (typeof component.visibleIf === 'string') {
+      const value = getByPointer(dm, component.visibleIf);
+      return Boolean(value);
+    }
+
+    const condition = component.visibleIf as VisibilityCondition;
+    const value = getByPointer(dm, condition.path);
+
+    if (condition.eq !== undefined) return value === condition.eq;
+    if (condition.neq !== undefined) return value !== condition.neq;
+    if (condition.gt !== undefined) return typeof value === 'number' && value > condition.gt;
+    if (condition.gte !== undefined) return typeof value === 'number' && value >= condition.gte;
+    if (condition.lt !== undefined) return typeof value === 'number' && value < condition.lt;
+    if (condition.lte !== undefined) return typeof value === 'number' && value <= condition.lte;
+
+    return Boolean(value);
+  };
+
+  // Render a component with a scoped data model (used for List iteration)
+  const renderComponentWithDataModel = (
+    component: Component,
+    dm: DataModel,
+    key?: string | number
+  ): React.ReactNode => {
+    if (!isVisibleWithDataModel(component, dm)) return null;
+
+    const id = component.id ?? generateId();
+    const componentKey = key ?? id;
+
+    switch (component.component) {
+      case 'Text':
+        return <CcText key={componentKey} component={component} dataModel={dm} />;
+      case 'Button':
+        return <CcButton key={componentKey} component={component} dataModel={dm} onAction={handleAction} />;
+      case 'Image':
+        return <CcImage key={componentKey} component={component} dataModel={dm} />;
+      case 'Badge':
+        return <CcBadge key={componentKey} component={component} dataModel={dm} />;
+      case 'Avatar':
+        return <CcAvatar key={componentKey} component={component} dataModel={dm} />;
+      case 'Row':
+        return (
+          <CcRow key={componentKey} component={component} dataModel={dm}>
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+          </CcRow>
+        );
+      case 'Column':
+        return (
+          <CcColumn key={componentKey} component={component} dataModel={dm}>
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+          </CcColumn>
+        );
+      case 'Card':
+        return (
+          <CcCard key={componentKey} component={component} dataModel={dm}>
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+          </CcCard>
+        );
+      default:
+        // Fall back to regular render for unsupported components in list context
+        return renderComponent(component, componentKey);
+    }
+  };
+
+  // Render a List component by iterating over array data
+  const renderList = (component: ListComponent, key?: string | number): React.ReactNode => {
+    const items = getByPointer(dataModel, component.itemsPath) as unknown[];
+
+    if (!Array.isArray(items) || items.length === 0) {
+      if (component.emptyMessage) {
+        return <div key={key} className="cc-list-empty">{component.emptyMessage}</div>;
+      }
+      return null;
+    }
+
+    return (
+      <React.Fragment key={key}>
+        {items.map((item, index) => {
+          // Create a scoped data model with /item and /index available
+          const scopedDataModel = {
+            ...dataModel,
+            item,
+            index,
+          };
+          return renderComponentWithDataModel(component.itemTemplate, scopedDataModel, index);
+        })}
+      </React.Fragment>
+    );
   };
 
   const renderComponent = (component: Component, key?: string | number): React.ReactNode => {
@@ -330,6 +425,9 @@ export function CcSurface({
             {component.children.map((child, i) => renderComponent(child, i))}
           </CcTooltip>
         );
+
+      case 'List':
+        return renderList(component as ListComponent, componentKey);
 
       default:
         console.warn(`Unknown component type: ${(component as Component).component}`);
