@@ -14,7 +14,7 @@ export class CcDataTable extends LitElement {
       background: var(--cc-surface, white);
       border: 1px solid var(--cc-border, #e5e7eb);
       border-radius: 0.5rem;
-      overflow: hidden;
+      overflow-x: auto;
     }
 
     .table-header {
