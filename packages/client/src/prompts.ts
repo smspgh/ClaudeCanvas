@@ -43,14 +43,16 @@ Inside itemTemplate, use /item/fieldName to access each item's data, /index for 
 CHAT INTERFACE RULES:
 - Wrap message List in Column with gap:12 for proper spacing between bubbles
 - Message bubbles: padding 12, borderRadius 16, maxWidth "75%"
-- "Me" messages: justify end, blue (#3B82F6) background
-- Other messages: justify start, gray (#2D3748) background
-- Typing indicator: plain italic Text (NOT a card/bubble), color #A0AEC0, fontSize small
-- Input bar: fixed at bottom with Row containing TextField (flex:1) and Send Button
+- Typing indicator: plain italic Text (NOT a card/bubble), color #A0AEC0
+- Input bar: Row with TextField (flex:1) and Send Button
+- IMPORTANT: For sent vs received styling, use TWO separate cards with visibleIf (no conditional styles!):
+  {"component":"Row","justify":"end","visibleIf":"/item/isMe","children":[{"component":"Card","style":{"backgroundColor":"#3B82F6","padding":12,"borderRadius":16},"children":[...]}]}
+  {"component":"Row","justify":"start","visibleIf":{"path":"/item/isMe","eq":false},"children":[{"component":"Card","style":{"backgroundColor":"#2D3748","padding":12,"borderRadius":16},"children":[...]}]}
 
 CONDITIONAL VISIBILITY (show/hide based on state):
 visibleIf string (truthy): {"component":"Button","visibleIf":"/ui/showButton",...}
 visibleIf with eq: {"component":"Button","visibleIf":{"path":"/player/isPlaying","eq":false},...}
+WARNING: visibleIf is the ONLY conditional - do NOT use conditionals in style/justify/other props! Use duplicate components with visibleIf instead.
 
 DARK THEME PALETTE:
 - Background: #1A1C2E (deep navy)
