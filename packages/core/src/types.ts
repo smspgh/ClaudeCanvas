@@ -355,6 +355,8 @@ export interface DataTableComponent extends BaseComponent {
   selectionPath?: JsonPointer;
   /** Show search/filter input */
   searchable?: boolean;
+  /** Custom placeholder for search input (default: "Search...") */
+  searchPlaceholder?: string;
   /** Empty state message */
   emptyMessage?: string;
 }

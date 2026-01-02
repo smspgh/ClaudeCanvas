@@ -35,8 +35,8 @@ Skeleton: {"component":"Skeleton","variant":"text|circular|rectangular","lines":
 Tooltip: {"component":"Tooltip","content":"Hover info","position":"top","children":[...]}
 Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","children":[...]}],"allowMultiple":false}
 List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items","alternateBackground":true}
-DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"selectable":true,"selectionPath":"/selectedRows"}
-DataTable props: columns (type: text|image|avatar|badge), selectionPath (for selected rows array), selectable, searchable, pagination, pageSize
+DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"searchPlaceholder":"Search employees...","selectable":true,"selectionPath":"/selectedRows"}
+DataTable props: columns (type: text|image|avatar|badge), selectionPath (for selected rows array), selectable, searchable, searchPlaceholder, pagination, pageSize
 
 IMPORTANT - CHOOSING List vs DataTable:
 - Use DataTable for tabular data with sorting, pagination, search, selection (employee directories, product catalogs, data grids)

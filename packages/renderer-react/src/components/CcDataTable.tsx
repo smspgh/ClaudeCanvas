@@ -127,7 +127,7 @@ export function CcDataTable({ component, dataModel, onInput }: CcDataTableProps)
           <input
             type="text"
             className="cc-data-table-search"
-            placeholder="Search..."
+            placeholder={component.searchPlaceholder || 'Search...'}
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); setCurrentPage(0); }}
           />

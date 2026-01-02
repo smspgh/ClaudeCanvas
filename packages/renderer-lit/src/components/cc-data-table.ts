@@ -360,7 +360,7 @@ export class CcDataTable extends LitElement {
             <input
               type="text"
               class="search-input"
-              placeholder="Search..."
+              placeholder=${this.component.searchPlaceholder || 'Search...'}
               .value=${this.searchQuery}
               @input=${this.handleSearch}
             />
