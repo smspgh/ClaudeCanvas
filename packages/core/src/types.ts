@@ -171,6 +171,8 @@ export interface TextComponent extends BaseComponent {
   content?: string;
   /** JSON pointer to dynamic content */
   contentPath?: JsonPointer;
+  /** Computed expression to apply to contentPath value (e.g., 'length' for array count) */
+  contentExpr?: ComputedExpr;
   textStyle?: TextStyle;
   color?: string;
   /** Support markdown rendering */

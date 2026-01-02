@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import type { TextComponent, TextStyle, DataModel } from '@claude-canvas/core';
-import { getByPointer } from '@claude-canvas/core';
+import { getByPointer, evaluateExpression } from '@claude-canvas/core';
 
 @customElement('cc-text')
 export class CcText extends LitElement {
@@ -75,7 +75,10 @@ export class CcText extends LitElement {
 
   private getContent(): string {
     if (this.component.contentPath) {
-      const value = getByPointer(this.dataModel, this.component.contentPath);
+      let value = getByPointer(this.dataModel, this.component.contentPath);
+      if (this.component.contentExpr) {
+        value = evaluateExpression(this.component.contentExpr, value);
+      }
       return String(value ?? '');
     }
     return this.component.content ?? '';

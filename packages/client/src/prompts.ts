@@ -17,7 +17,7 @@ COMPONENTS:
 Card: {"component":"Card","elevated":true,"style":{"backgroundColor":"#1A1C2E","padding":24},"children":[...]}
 Column: {"component":"Column","gap":12,"children":[...]}
 Row: {"component":"Row","gap":12,"justify":"center","children":[...]} (justify: start|center|end|spaceBetween)
-Text: {"component":"Text","content":"text","textStyle":"heading2","style":{"color":"#fff"}} (secondary: #A0AEC0)
+Text: {"component":"Text","content":"text","textStyle":"heading2","style":{"color":"#fff"}} (secondary: #A0AEC0) - for dynamic count: {"component":"Text","contentPath":"/selectedRows","contentExpr":"length"}
 Image: {"component":"Image","src":"https://...","srcPath":"/data/imageUrl","alt":"desc","fit":"cover","style":{"width":80,"height":80,"borderRadius":8}}
 TextField: {"component":"TextField","valuePath":"/form/name","label":"Name","placeholder":"Enter"}
 Button: {"component":"Button","label":"Go","variant":"primary","action":{"type":"update","path":"/state","value":true}}
@@ -37,6 +37,7 @@ Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","child
 List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items","alternateBackground":true}
 DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"avatar","label":"","type":"avatar"},{"key":"name","label":"Name","sortable":true},{"key":"status","label":"Status","type":"badge"}],"pagination":true,"pageSize":10,"searchable":true,"searchPlaceholder":"Search employees...","selectable":true,"selectionPath":"/selectedRows"}
 DataTable props: columns (type: text|image|avatar|badge), selectionPath (for selected rows array), selectable, searchable, searchPlaceholder, pagination, pageSize
+BULK ACTIONS BAR: To show selection count, use contentExpr: {"component":"Text","contentPath":"/selectedRows","contentExpr":"length"} then append " selected" as separate Text
 
 IMPORTANT - CHOOSING List vs DataTable:
 - Use DataTable for tabular data with sorting, pagination, search, selection (employee directories, product catalogs, data grids)

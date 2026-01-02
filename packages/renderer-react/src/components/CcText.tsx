@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TextComponent, DataModel } from '@claude-canvas/core';
-import { getByPointer } from '@claude-canvas/core';
+import { getByPointer, evaluateExpression } from '@claude-canvas/core';
 
 export interface CcTextProps {
   component: TextComponent;
@@ -8,8 +8,18 @@ export interface CcTextProps {
 }
 
 export function CcText({ component, dataModel }: CcTextProps) {
-  const content = component.content ??
-    (component.contentPath ? String(getByPointer(dataModel, component.contentPath) ?? '') : '');
+  let content: string;
+  if (component.content != null) {
+    content = component.content;
+  } else if (component.contentPath) {
+    let value = getByPointer(dataModel, component.contentPath);
+    if (component.contentExpr) {
+      value = evaluateExpression(component.contentExpr, value);
+    }
+    content = String(value ?? '');
+  } else {
+    content = '';
+  }
 
   const textStyle = component.textStyle ?? 'body';
   const componentStyle = component.style as Record<string, unknown> | undefined;
