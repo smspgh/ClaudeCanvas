@@ -4,7 +4,7 @@
  * Uses your Claude Code subscription - no API key required!
  */
 
-import { execSync, spawn } from 'child_process';
+import { execSync, spawn, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -133,48 +133,49 @@ export class ClaudeCanvasAgent {
 
   /**
    * Call Claude Code CLI with the given prompt (synchronous for reliability)
+   * Uses stdin to avoid Windows command line length limits
    */
   private callClaudeCLI(fullPrompt: string): string {
     const cliPath = this.options.claudePath || getClaudePath();
     console.log(`[ClaudeCanvas] Calling Claude CLI at: ${cliPath}`);
+    console.log(`[ClaudeCanvas] Prompt length: ${fullPrompt.length} chars`);
 
-    // Escape the prompt for shell - more aggressive escaping for cmd.exe
-    const escapedPrompt = fullPrompt
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, ' ')
-      .replace(/\r/g, '')
-      .replace(/\|/g, '^|')  // Escape pipe for cmd.exe
-      .replace(/&/g, '^&')   // Escape ampersand for cmd.exe
-      .replace(/</g, '^<')   // Escape less than
-      .replace(/>/g, '^>')   // Escape greater than
-      .replace(/%/g, '%%');  // Escape percent
-
-    // Build command with full path
-    // Use --tools "" to disable tools (pure text generation)
-    // Use --output-format text for simple text output
-    // Use --system-prompt to override and force JSON-only output
+    // Use spawnSync with stdin to bypass command line length limits
     const systemPrompt = 'You are a JSON generator. Output ONLY valid JSON arrays. No text, no markdown, no explanations. Start with [ and end with ].';
-    let cmd = `"${cliPath}" -p "${escapedPrompt}" --output-format text --tools "" --system-prompt "${systemPrompt}"`;
+    const args = [
+      '--output-format', 'text',
+      '--tools', '',
+      '--system-prompt', systemPrompt,
+    ];
 
     if (this.options.model) {
-      cmd += ` --model ${this.options.model}`;
+      args.push('--model', this.options.model);
     }
 
-    console.log('[ClaudeCanvas] Command:', cmd.substring(0, 200) + '...');
+    console.log('[ClaudeCanvas] Using stdin for prompt (bypassing cmd line limit)');
 
     try {
-      const result = execSync(cmd, {
-        encoding: 'utf-8' as BufferEncoding,
+      const result = spawnSync(cliPath, args, {
+        input: fullPrompt,
+        encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024, // 10MB
         timeout: 120000, // 2 minute timeout
         cwd: this.options.cwd,
-        shell: 'cmd.exe',
+        shell: true,
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.status !== 0) {
+        throw new Error(`CLI exited with status ${result.status}: ${result.stderr}`);
+      }
+
+      const output = result.stdout;
       console.log('[ClaudeCanvas] CLI response received');
-      console.log('[ClaudeCanvas] Response preview:', result.substring(0, 200));
-      return result;
+      console.log('[ClaudeCanvas] Response preview:', output.substring(0, 200));
+      return output;
     } catch (error) {
       console.error('[ClaudeCanvas] CLI error:', error);
       throw error;
@@ -183,6 +184,7 @@ export class ClaudeCanvasAgent {
 
   /**
    * Call Claude Code CLI with streaming support for progressive updates
+   * Uses stdin to avoid Windows command line length limits
    */
   private callClaudeCLIStreaming(
     fullPrompt: string,
@@ -191,28 +193,31 @@ export class ClaudeCanvasAgent {
     return new Promise((resolve, reject) => {
       const cliPath = this.options.claudePath || getClaudePath();
       console.log(`[ClaudeCanvas] Calling Claude CLI (streaming) at: ${cliPath}`);
+      console.log(`[ClaudeCanvas] Prompt length: ${fullPrompt.length} chars`);
 
-      // Build arguments for spawn
+      // Build arguments for spawn - no -p flag, we'll use stdin
       const systemPrompt = 'You are a JSON generator. Output ONLY valid JSON arrays. No text, no markdown, no explanations. Start with [ and end with ].';
       const args = [
-        '-p',
-        fullPrompt,
-        '--output-format',
-        'text',
-        '--tools',
-        '',
-        '--system-prompt',
-        systemPrompt,
+        '--output-format', 'text',
+        '--tools', '',
+        '--system-prompt', systemPrompt,
       ];
 
       if (this.options.model) {
         args.push('--model', this.options.model);
       }
 
+      console.log('[ClaudeCanvas] Using stdin for prompt (bypassing cmd line limit)');
+
       const child = spawn(cliPath, args, {
         cwd: this.options.cwd,
         shell: true,
+        stdio: ['pipe', 'pipe', 'pipe'], // Enable stdin
       });
+
+      // Write prompt to stdin and close it
+      child.stdin.write(fullPrompt);
+      child.stdin.end();
 
       let fullOutput = '';
       const parser = new StreamingJsonParser({
