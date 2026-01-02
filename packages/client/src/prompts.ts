@@ -38,9 +38,15 @@ List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"R
 
 IMPORTANT - USE List FOR DYNAMIC DATA:
 When rendering arrays (chat messages, todo items, product lists), use List component instead of hardcoding each item!
-Example - Chat messages from /messages array:
-{"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","justify":{"path":"/item/isMe","eq":true},"children":[{"component":"Card","style":{"backgroundColor":"#3B82F6"},"visibleIf":"/item/isMe","children":[{"component":"Text","contentPath":"/item/text"}]},{"component":"Card","style":{"backgroundColor":"#2D3748"},"visibleIf":{"path":"/item/isMe","eq":false},"children":[{"component":"Text","contentPath":"/item/text"}]}]}}
 Inside itemTemplate, use /item/fieldName to access each item's data, /index for position.
+
+CHAT INTERFACE RULES:
+- Wrap message List in Column with gap:12 for proper spacing between bubbles
+- Message bubbles: padding 12, borderRadius 16, maxWidth "75%"
+- "Me" messages: justify end, blue (#3B82F6) background
+- Other messages: justify start, gray (#2D3748) background
+- Typing indicator: plain italic Text (NOT a card/bubble), color #A0AEC0, fontSize small
+- Input bar: fixed at bottom with Row containing TextField (flex:1) and Send Button
 
 CONDITIONAL VISIBILITY (show/hide based on state):
 visibleIf string (truthy): {"component":"Button","visibleIf":"/ui/showButton",...}
@@ -61,6 +67,7 @@ DESIGN RULES:
 - High contrast for important data (temps, prices, stats) - use #fff or bright accent
 - Icons/action buttons: use bright colors (#fff, #F6AD55, #EF4444) for visibility
 - For horizontal layouts (kanban, galleries): use style.overflowX:"auto" on parent Row
+- ALWAYS add gap (8-16) to Column/Row containing repeated items for proper spacing
 - Keep descriptions SHORT (under 50 chars) to reduce JSON size
 - Prefer 2-3 sample items over many - keep output compact
 
