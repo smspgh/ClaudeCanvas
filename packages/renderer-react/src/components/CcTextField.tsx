@@ -9,7 +9,11 @@ export interface CcTextFieldProps {
 }
 
 export function CcTextField({ component, dataModel, onInput }: CcTextFieldProps) {
-  const value = String(getByPointer(dataModel, component.valuePath) ?? '');
+  const rawValue = getByPointer(dataModel, component.valuePath);
+  // Handle null, undefined, and objects (avoid [object Object])
+  const value = (rawValue === null || rawValue === undefined || typeof rawValue === 'object')
+    ? ''
+    : String(rawValue);
   const id = `textfield-${component.valuePath.replace(/\//g, '-')}`;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

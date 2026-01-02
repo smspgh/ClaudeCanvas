@@ -30,3 +30,4 @@ coverage/
 
 # Vite
 .vite/
+.playwright-mcp/

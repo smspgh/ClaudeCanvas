@@ -71,7 +71,10 @@ export class CcTextField extends LitElement {
 
   private getValue(): string {
     const value = getByPointer(this.dataModel, this.component.valuePath);
-    return String(value ?? '');
+    // Handle null, undefined, and objects (avoid [object Object])
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') return '';
+    return String(value);
   }
 
   private handleInput(e: Event) {
