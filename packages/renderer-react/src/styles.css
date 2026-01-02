@@ -59,6 +59,8 @@
 /* Text */
 .cc-text {
   margin: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .cc-text.heading1 {

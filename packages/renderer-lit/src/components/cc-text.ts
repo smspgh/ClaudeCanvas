@@ -16,6 +16,8 @@ export class CcText extends LitElement {
       font-weight: 700;
       line-height: 1.2;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .heading2 {
@@ -23,6 +25,8 @@ export class CcText extends LitElement {
       font-weight: 600;
       line-height: 1.3;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .heading3 {
@@ -30,12 +34,16 @@ export class CcText extends LitElement {
       font-weight: 600;
       line-height: 1.4;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .body {
       font-size: 1rem;
       line-height: 1.5;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .caption {
@@ -43,6 +51,8 @@ export class CcText extends LitElement {
       color: var(--cc-text-secondary, #666);
       line-height: 1.4;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
 
     .code {
@@ -52,6 +62,8 @@ export class CcText extends LitElement {
       padding: 0.125rem 0.375rem;
       border-radius: 4px;
       margin: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
   `;
 
