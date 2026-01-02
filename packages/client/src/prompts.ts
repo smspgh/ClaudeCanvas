@@ -68,6 +68,8 @@ CHAT INTERFACE RULES:
 CONDITIONAL VISIBILITY (show/hide based on state):
 visibleIf string (truthy): {"component":"Button","visibleIf":"/ui/showButton",...}
 visibleIf with eq: {"component":"Button","visibleIf":{"path":"/player/isPlaying","eq":false},...}
+visibleIf with neq (not equal): {"component":"Button","visibleIf":{"path":"/dateRange","neq":"Week"},...}
+Available operators: eq, neq, gt, gte, lt, lte. Do NOT use "not:true" - use neq instead.
 WARNING: visibleIf is the ONLY conditional - do NOT use conditionals in style/justify/other props! Use duplicate components with visibleIf instead.
 
 DARK THEME PALETTE:
