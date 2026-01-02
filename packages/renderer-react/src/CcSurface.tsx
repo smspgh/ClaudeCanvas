@@ -9,7 +9,7 @@ import type {
   VisibilityCondition,
   ListComponent,
 } from '@claude-canvas/core';
-import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
+import { setByPointer, getByPointer, generateId, interpolatePath, evaluateExpression } from '@claude-canvas/core';
 
 import { CcText } from './components/CcText.js';
 import { CcButton } from './components/CcButton.js';
@@ -106,7 +106,12 @@ export function CcSurface({
 
     // Object syntax with comparison operators
     const condition = component.visibleIf as VisibilityCondition;
-    const value = getByPointer(dataModel, condition.path);
+    let value = getByPointer(dataModel, condition.path);
+
+    // Apply computed expression if specified
+    if (condition.expr) {
+      value = evaluateExpression(condition.expr, value);
+    }
 
     if (condition.eq !== undefined) return value === condition.eq;
     if (condition.neq !== undefined) return value !== condition.neq;
@@ -129,7 +134,12 @@ export function CcSurface({
     }
 
     const condition = component.visibleIf as VisibilityCondition;
-    const value = getByPointer(dm, condition.path);
+    let value = getByPointer(dm, condition.path);
+
+    // Apply computed expression if specified
+    if (condition.expr) {
+      value = evaluateExpression(condition.expr, value);
+    }
 
     if (condition.eq !== undefined) return value === condition.eq;
     if (condition.neq !== undefined) return value !== condition.neq;
@@ -142,15 +152,26 @@ export function CcSurface({
   };
 
   // Render a component with a scoped data model (used for List iteration)
+  // Supports path interpolation for {item.field} patterns
   const renderComponentWithDataModel = (
     component: Component,
     dm: DataModel,
+    item?: unknown,
+    index?: number,
     key?: string | number
   ): React.ReactNode => {
     if (!isVisibleWithDataModel(component, dm)) return null;
 
     const id = component.id ?? generateId();
     const componentKey = key ?? id;
+
+    // Helper to interpolate paths if item context is available
+    const interpolate = (path: string): string => {
+      if (item !== undefined && index !== undefined && path.includes('{')) {
+        return interpolatePath(path, item, index);
+      }
+      return path;
+    };
 
     switch (component.component) {
       case 'Text':
@@ -163,22 +184,37 @@ export function CcSurface({
         return <CcBadge key={componentKey} component={component} dataModel={dm} />;
       case 'Avatar':
         return <CcAvatar key={componentKey} component={component} dataModel={dm} />;
+      case 'Checkbox': {
+        // Support path interpolation for checkbox valuePath
+        const checkboxComp = { ...component };
+        if ('valuePath' in checkboxComp && typeof checkboxComp.valuePath === 'string') {
+          (checkboxComp as Record<string, unknown>).valuePath = interpolate(checkboxComp.valuePath as string);
+        }
+        return (
+          <CcCheckbox
+            key={componentKey}
+            component={checkboxComp}
+            dataModel={dm}
+            onInput={handleInput}
+          />
+        );
+      }
       case 'Row':
         return (
           <CcRow key={componentKey} component={component} dataModel={dm}>
-            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, item, index, i))}
           </CcRow>
         );
       case 'Column':
         return (
           <CcColumn key={componentKey} component={component} dataModel={dm}>
-            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, item, index, i))}
           </CcColumn>
         );
       case 'Card':
         return (
           <CcCard key={componentKey} component={component} dataModel={dm}>
-            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, i))}
+            {component.children.map((child, i) => renderComponentWithDataModel(child, dm, item, index, i))}
           </CcCard>
         );
       default:
@@ -198,8 +234,13 @@ export function CcSurface({
       return null;
     }
 
+    const gap = component.gap ?? 0;
+    const containerStyle: React.CSSProperties = gap
+      ? { display: 'flex', flexDirection: 'column', gap: `${gap}px` }
+      : {};
+
     return (
-      <React.Fragment key={key}>
+      <div key={key} style={containerStyle}>
         {items.map((item, index) => {
           // Create a scoped data model with /item and /index available
           const scopedDataModel = {
@@ -207,9 +248,17 @@ export function CcSurface({
             item,
             index,
           };
-          return renderComponentWithDataModel(component.itemTemplate, scopedDataModel, index);
+          // Compute alternate background style
+          const altBgStyle: React.CSSProperties = component.alternateBackground && index % 2 === 1
+            ? { backgroundColor: 'rgba(255,255,255,0.03)' }
+            : {};
+          return (
+            <div key={index} style={altBgStyle}>
+              {renderComponentWithDataModel(component.itemTemplate, scopedDataModel, item, index, index)}
+            </div>
+          );
         })}
-      </React.Fragment>
+      </div>
     );
   };
 

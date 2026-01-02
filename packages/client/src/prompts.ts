@@ -34,11 +34,19 @@ Alert: {"component":"Alert","message":"Important","variant":"info|success|warnin
 Skeleton: {"component":"Skeleton","variant":"text|circular|rectangular","lines":3,"animation":"pulse|wave"}
 Tooltip: {"component":"Tooltip","content":"Hover info","position":"top","children":[...]}
 Accordion: {"component":"Accordion","items":[{"id":"s1","title":"Section","children":[...]}],"allowMultiple":false}
-List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items"}
+List: {"component":"List","itemsPath":"/messages","itemTemplate":{"component":"Row","children":[{"component":"Text","contentPath":"/item/text"}]},"emptyMessage":"No items","alternateBackground":true}
+DataTable: {"component":"DataTable","dataPath":"/employees","columns":[{"key":"name","label":"Name","sortable":true},{"key":"role","label":"Role"}],"pagination":true,"pageSize":10,"searchable":true,"selectable":true}
 
-IMPORTANT - USE List FOR DYNAMIC DATA:
-When rendering arrays (chat messages, todo items, product lists), use List component instead of hardcoding each item!
-Inside itemTemplate, use /item/fieldName to access each item's data, /index for position.
+IMPORTANT - CHOOSING List vs DataTable:
+- Use DataTable for tabular data with sorting, pagination, search, selection (employee directories, product catalogs, data grids)
+- Use List for simple repeated items (chat messages, todo items, cards, notifications)
+DataTable has BUILT-IN: sorting, pagination, search, row selection, bulk actions - don't rebuild these with List!
+
+LIST FEATURES:
+- Inside itemTemplate: /item/fieldName for item data, /index for position
+- Path interpolation: "/selectedItems/{item.id}" dynamically creates paths like "/selectedItems/123"
+- alternateBackground: true for zebra striping
+- Computed expressions in visibleIf: {"expr":"any","path":"/selected"}, {"expr":"gt","path":"/count","value":0}
 
 CHAT INTERFACE RULES:
 - Wrap message List in Column with gap:12 for proper spacing between bubbles

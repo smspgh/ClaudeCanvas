@@ -23,10 +23,15 @@ export type ComponentId = string;
 /** Comparison operators for conditional visibility */
 export type VisibilityOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
 
+/** Computed expression types for dynamic values */
+export type ComputedExpr = 'count' | 'length' | 'any' | 'all' | 'none' | 'sum';
+
 /** Object-based visibility condition with comparison operator */
 export interface VisibilityCondition {
   /** JSON pointer to the value to check */
   path: JsonPointer;
+  /** Computed expression to apply to the value before comparison */
+  expr?: ComputedExpr;
   /** Comparison operator (default: truthy check if omitted) */
   eq?: unknown;
   neq?: unknown;
@@ -389,9 +394,14 @@ export interface ListComponent extends BaseComponent {
   component: 'List';
   /** JSON pointer to array data */
   itemsPath: JsonPointer;
-  /** Template to render for each item. Use "/item" prefix for item data */
+  /** Template to render for each item. Use "/item" prefix for item data, /index for position */
   itemTemplate: Component;
+  /** Message to show when array is empty */
   emptyMessage?: string;
+  /** Enable alternating row backgrounds (zebra striping) */
+  alternateBackground?: boolean;
+  /** Gap between items in pixels */
+  gap?: number;
 }
 
 // Progress/Spinner Components

@@ -10,7 +10,7 @@ import type {
   VisibilityCondition,
   ListComponent,
 } from '@claude-canvas/core';
-import { setByPointer, getByPointer, generateId } from '@claude-canvas/core';
+import { setByPointer, getByPointer, generateId, interpolatePath, evaluateExpression } from '@claude-canvas/core';
 
 // Import all components
 import './components/index.js';
@@ -115,7 +115,12 @@ export class CcSurface extends LitElement {
 
     // Object syntax with comparison operators
     const condition = component.visibleIf as VisibilityCondition;
-    const value = getByPointer(this.dataModel, condition.path);
+    let value = getByPointer(this.dataModel, condition.path);
+
+    // Apply computed expression if specified
+    if (condition.expr) {
+      value = evaluateExpression(condition.expr, value);
+    }
 
     if (condition.eq !== undefined) return value === condition.eq;
     if (condition.neq !== undefined) return value !== condition.neq;
@@ -141,27 +146,47 @@ export class CcSurface extends LitElement {
       return nothing;
     }
 
+    const gap = component.gap ?? 0;
+    const containerStyle = gap ? `display: flex; flex-direction: column; gap: ${gap}px;` : '';
+
     return html`
-      ${items.map((item, index) => {
-        // Create a scoped data model with /item and /index available
-        const scopedDataModel = {
-          ...this.dataModel,
-          item,
-          index,
-        };
-        return this.renderComponentWithDataModel(component.itemTemplate, scopedDataModel);
-      })}
+      <div style=${containerStyle}>
+        ${items.map((item, index) => {
+          // Create a scoped data model with /item and /index available
+          const scopedDataModel = {
+            ...this.dataModel,
+            item,
+            index,
+          };
+          // Compute alternate background style
+          const altBgStyle = component.alternateBackground && index % 2 === 1
+            ? 'background-color: rgba(255,255,255,0.03);'
+            : '';
+          return html`<div style=${altBgStyle}>${this.renderComponentWithDataModel(component.itemTemplate, scopedDataModel, item, index)}</div>`;
+        })}
+      </div>
     `;
   }
 
   /**
    * Render a component with a custom data model (used for List iteration)
+   * Supports path interpolation for {item.field} patterns
    */
   private renderComponentWithDataModel(
     component: Component,
-    dataModel: DataModel
+    dataModel: DataModel,
+    item?: unknown,
+    index?: number
   ): TemplateResult | typeof nothing {
     if (!this.isVisibleWithDataModel(component, dataModel)) return nothing;
+
+    // Helper to interpolate paths if item context is available
+    const interpolate = (path: string): string => {
+      if (item !== undefined && index !== undefined && path.includes('{')) {
+        return interpolatePath(path, item, index);
+      }
+      return path;
+    };
 
     switch (component.component) {
       case 'Text':
@@ -174,22 +199,30 @@ export class CcSurface extends LitElement {
         return html`<cc-badge .component=${component} .dataModel=${dataModel}></cc-badge>`;
       case 'Avatar':
         return html`<cc-avatar .component=${component} .dataModel=${dataModel}></cc-avatar>`;
+      case 'Checkbox': {
+        // Support path interpolation for checkbox valuePath
+        const checkboxComp = { ...component };
+        if ('valuePath' in checkboxComp && typeof checkboxComp.valuePath === 'string') {
+          (checkboxComp as Record<string, unknown>).valuePath = interpolate(checkboxComp.valuePath as string);
+        }
+        return html`<cc-checkbox .component=${checkboxComp} .dataModel=${dataModel}></cc-checkbox>`;
+      }
       case 'Row':
         return html`
           <cc-row .component=${component} .dataModel=${dataModel}>
-            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel, item, index))}
           </cc-row>
         `;
       case 'Column':
         return html`
           <cc-column .component=${component} .dataModel=${dataModel}>
-            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel, item, index))}
           </cc-column>
         `;
       case 'Card':
         return html`
           <cc-card .component=${component} .dataModel=${dataModel}>
-            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel))}
+            ${component.children.map(child => this.renderComponentWithDataModel(child, dataModel, item, index))}
           </cc-card>
         `;
       default:
@@ -207,7 +240,12 @@ export class CcSurface extends LitElement {
     }
 
     const condition = component.visibleIf as VisibilityCondition;
-    const value = getByPointer(dataModel, condition.path);
+    let value = getByPointer(dataModel, condition.path);
+
+    // Apply computed expression if specified
+    if (condition.expr) {
+      value = evaluateExpression(condition.expr, value);
+    }
 
     if (condition.eq !== undefined) return value === condition.eq;
     if (condition.neq !== undefined) return value !== condition.neq;

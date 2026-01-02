@@ -67,3 +67,77 @@ export function isValidComponentType(type: string): boolean {
 export function generateId(prefix = 'cc'): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+/**
+ * Interpolate path templates with item data
+ * Replaces {item.fieldName} patterns with actual values
+ * Example: "/selectedItems/{item.id}" with item {id: "123"} -> "/selectedItems/123"
+ */
+export function interpolatePath(path: string, item: unknown, index: number): string {
+  return path.replace(/\{item\.(\w+)\}/g, (_, field) => {
+    if (item && typeof item === 'object') {
+      const value = (item as Record<string, unknown>)[field];
+      return String(value ?? '');
+    }
+    return '';
+  }).replace(/\{index\}/g, String(index));
+}
+
+/**
+ * Evaluate a computed expression on a value
+ */
+export function evaluateExpression(expr: string, value: unknown): unknown {
+  switch (expr) {
+    case 'length':
+      if (Array.isArray(value)) return value.length;
+      if (typeof value === 'string') return value.length;
+      if (typeof value === 'object' && value !== null) return Object.keys(value).length;
+      return 0;
+
+    case 'count':
+      // Count truthy values in object or array
+      if (Array.isArray(value)) return value.filter(Boolean).length;
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).filter(Boolean).length;
+      }
+      return value ? 1 : 0;
+
+    case 'any':
+      // Check if any value is truthy
+      if (Array.isArray(value)) return value.some(Boolean);
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).some(Boolean);
+      }
+      return Boolean(value);
+
+    case 'all':
+      // Check if all values are truthy
+      if (Array.isArray(value)) return value.length > 0 && value.every(Boolean);
+      if (typeof value === 'object' && value !== null) {
+        const vals = Object.values(value);
+        return vals.length > 0 && vals.every(Boolean);
+      }
+      return Boolean(value);
+
+    case 'none':
+      // Check if no values are truthy
+      if (Array.isArray(value)) return !value.some(Boolean);
+      if (typeof value === 'object' && value !== null) {
+        return !Object.values(value).some(Boolean);
+      }
+      return !value;
+
+    case 'sum':
+      // Sum numeric values
+      if (Array.isArray(value)) {
+        return value.reduce((acc, v) => acc + (typeof v === 'number' ? v : 0), 0);
+      }
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).reduce((acc: number, v) => acc + (typeof v === 'number' ? v : 0), 0);
+      }
+      return typeof value === 'number' ? value : 0;
+
+    default:
+      return value;
+  }
+}
