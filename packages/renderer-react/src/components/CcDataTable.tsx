@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import type { DataTableComponent, DataModel } from '@claude-canvas/core';
+import type { DataTableComponent, DataTableColumn, DataModel } from '@claude-canvas/core';
 import { getByPointer } from '@claude-canvas/core';
 
 export interface CcDataTableProps {
@@ -102,6 +102,24 @@ export function CcDataTable({ component, dataModel, onInput }: CcDataTableProps)
     }
   };
 
+  const renderCellValue = (row: Record<string, unknown>, col: DataTableColumn) => {
+    const value = row[col.key];
+    const strValue = String(value ?? '');
+
+    switch (col.type) {
+      case 'image':
+        return strValue ? <img className="cc-data-table-cell-image" src={strValue} alt="" /> : null;
+      case 'avatar':
+        return strValue ? <img className="cc-data-table-cell-avatar" src={strValue} alt="" /> : null;
+      case 'badge': {
+        const badgeClass = `cc-data-table-cell-badge badge-${strValue.toLowerCase()}`;
+        return <span className={badgeClass}>{strValue}</span>;
+      }
+      default:
+        return strValue;
+    }
+  };
+
   return (
     <div className="cc-data-table">
       {component.searchable && (
@@ -165,7 +183,7 @@ export function CcDataTable({ component, dataModel, onInput }: CcDataTableProps)
                     </td>
                   )}
                   {component.columns.map(col => (
-                    <td key={col.key}>{String(row[col.key] ?? '')}</td>
+                    <td key={col.key}>{renderCellValue(row, col)}</td>
                   ))}
                 </tr>
               );

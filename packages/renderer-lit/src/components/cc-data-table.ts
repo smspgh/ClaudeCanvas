@@ -1,6 +1,6 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import type { DataTableComponent, DataModel } from '@claude-canvas/core';
+import type { DataTableComponent, DataTableColumn, DataModel } from '@claude-canvas/core';
 import { getByPointer } from '@claude-canvas/core';
 
 @customElement('cc-data-table')
@@ -105,6 +105,50 @@ export class CcDataTable extends LitElement {
       accent-color: var(--cc-primary, #6366f1);
     }
 
+    .cell-image {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .cell-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .cell-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      background: var(--cc-surface-dim, #e5e7eb);
+      color: var(--cc-text, #333);
+    }
+
+    .cell-badge.badge-active, .cell-badge.badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .cell-badge.badge-away, .cell-badge.badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .cell-badge.badge-offline, .cell-badge.badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .cell-badge.badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
     .empty-state {
       padding: 3rem;
       text-align: center;
@@ -167,6 +211,24 @@ export class CcDataTable extends LitElement {
 
   @state()
   private selectedRows: Set<number> = new Set();
+
+  private renderCellValue(row: Record<string, unknown>, col: DataTableColumn): TemplateResult | string {
+    const value = row[col.key];
+    const strValue = String(value ?? '');
+
+    switch (col.type) {
+      case 'image':
+        return strValue ? html`<img class="cell-image" src=${strValue} alt="" />` : html``;
+      case 'avatar':
+        return strValue ? html`<img class="cell-avatar" src=${strValue} alt="" />` : html``;
+      case 'badge': {
+        const badgeClass = `badge-${strValue.toLowerCase()}`;
+        return html`<span class="cell-badge ${badgeClass}">${strValue}</span>`;
+      }
+      default:
+        return strValue;
+    }
+  }
 
   private getData(): Record<string, unknown>[] {
     const data = getByPointer(this.dataModel, this.component.dataPath);
@@ -353,7 +415,7 @@ export class CcDataTable extends LitElement {
                       </td>
                     ` : nothing}
                     ${this.component.columns.map(col => html`
-                      <td>${row[col.key] ?? ''}</td>
+                      <td>${this.renderCellValue(row, col)}</td>
                     `)}
                   </tr>
                 `;

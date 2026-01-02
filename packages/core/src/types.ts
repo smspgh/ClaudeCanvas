@@ -335,6 +335,8 @@ export interface DataTableColumn {
   label: string;
   sortable?: boolean;
   width?: string | number;
+  /** Column type for special rendering: 'text' (default), 'image', 'avatar', 'badge' */
+  type?: 'text' | 'image' | 'avatar' | 'badge';
 }
 
 export interface DataTableComponent extends BaseComponent {
