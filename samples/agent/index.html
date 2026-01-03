@@ -449,22 +449,16 @@
           </div>
         </div>
 
-        <!-- Angular Renderer (Code Preview) -->
+        <!-- Angular Renderer (Live) -->
         <div class="panel renderer-panel" id="angular-panel" data-renderer="angular">
           <div class="panel-header">
             <span class="icon">🅰️</span> Angular Renderer
-            <span class="badge badge-code">Code</span>
+            <span class="badge badge-web">Live</span>
           </div>
           <div class="panel-content">
-            <div class="code-tabs">
-              <button class="code-tab active" data-tab="component">Component</button>
-              <button class="code-tab" data-tab="template">Template</button>
-            </div>
-            <div id="angular-component" class="code-content active">
-              <pre class="code-output" id="angular-code">// Generate a UI to see Angular code</pre>
-            </div>
-            <div id="angular-template" class="code-content">
-              <pre class="code-output" id="angular-template-code">// Generate a UI to see Angular template</pre>
+            <cc-surface-angular id="surface-angular"></cc-surface-angular>
+            <div id="empty-state-angular" class="empty-state">
+              Enter a prompt to see the Angular renderer
             </div>
           </div>
         </div>

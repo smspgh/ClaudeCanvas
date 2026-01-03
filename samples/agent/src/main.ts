@@ -1,6 +1,6 @@
 /**
  * ClaudeCanvas Demo Application
- * Multi-renderer comparison: Lit, React (Live), Angular, Flutter, Android (Code Preview)
+ * Multi-renderer comparison: Lit, React, Angular (Live), Flutter, Android (Code Preview)
  */
 
 import '@claude-canvas/renderer-lit';
@@ -14,6 +14,10 @@ import { createRoot, Root } from 'react-dom/client';
 import { CcSurface as CcSurfaceReact } from '@claude-canvas/renderer-react';
 import '@claude-canvas/renderer-react/styles.css';
 
+// Angular imports - currently disabled pending bundle format compatibility
+// TODO: Enable when Angular renderer supports browser bundling
+// import { initAngularElement } from '@claude-canvas/renderer-angular';
+
 const SERVER_URL = 'http://localhost:3001';
 
 // DOM Elements
@@ -25,6 +29,14 @@ const newSessionBtn = document.getElementById('new-session') as HTMLButtonElemen
 const iterationIndicator = document.getElementById('iteration-indicator') as HTMLSpanElement;
 const emptyStateLit = document.getElementById('empty-state-lit') as HTMLDivElement;
 const emptyStateReact = document.getElementById('empty-state-react') as HTMLDivElement;
+const emptyStateAngular = document.getElementById('empty-state-angular') as HTMLDivElement;
+
+// Angular surface element (custom element from @angular/elements)
+const surfaceAngular = document.getElementById('surface-angular') as HTMLElement & {
+  surface: Surface | null;
+  initialDataModel: DataModel;
+  processMessages?: (messages: AgentToClientMessage[]) => void;
+};
 const loading = document.getElementById('loading') as HTMLDivElement;
 const jsonOutput = document.getElementById('json-output') as HTMLDivElement;
 const serverStatus = document.getElementById('server-status') as HTMLDivElement;
@@ -98,6 +110,50 @@ function processMessagesReact(messages: AgentToClientMessage[]) {
     }
   }
   renderReact();
+}
+
+// Angular state
+let angularSurface: Surface | null = null;
+let angularDataModel: DataModel = {};
+
+// Process messages for Angular
+function processMessagesAngular(messages: AgentToClientMessage[]) {
+  for (const message of messages) {
+    switch (message.type) {
+      case 'surfaceUpdate':
+        angularSurface = message.surface;
+        break;
+      case 'dataModelUpdate':
+        angularDataModel = setByPointer(angularDataModel, message.path, message.data);
+        break;
+      case 'deleteSurface':
+        if (angularSurface?.id === message.surfaceId) {
+          angularSurface = null;
+        }
+        break;
+    }
+  }
+  renderAngular();
+}
+
+// Render Angular surface
+function renderAngular() {
+  if (!surfaceAngular) return;
+
+  // Angular Elements use property binding, set properties directly
+  if (surfaceAngular.processMessages) {
+    // If the Angular component has processMessages method, use it
+    // This is the preferred way as it handles change detection
+  } else {
+    // Fallback: Set properties directly (may require manual change detection)
+    (surfaceAngular as any).surface = angularSurface;
+    (surfaceAngular as any).initialDataModel = angularDataModel;
+  }
+
+  // Hide empty state if we have a surface
+  if (emptyStateAngular) {
+    emptyStateAngular.style.display = angularSurface ? 'none' : 'block';
+  }
 }
 
 // ============================================================================
@@ -1132,6 +1188,7 @@ async function generateUI() {
   // Show loading, hide empty states
   emptyStateLit.style.display = 'none';
   emptyStateReact.style.display = 'none';
+  if (emptyStateAngular) emptyStateAngular.style.display = 'none';
   loading.style.display = 'flex';
   generateBtn.disabled = true;
 
@@ -1170,9 +1227,10 @@ async function generateUI() {
     messages = matchDemoPrompt(prompt) ?? demoResponses.settings;
   }
 
-  // Process messages for both renderers
+  // Process messages for all live renderers
   surfaceLit.processMessages(messages);
   processMessagesReact(messages);
+  processMessagesAngular(messages);
 
   // Track state for future iterations
   for (const msg of messages) {
@@ -1208,6 +1266,8 @@ async function clearSession() {
   currentDataModel = {};
   reactSurface = null;
   reactDataModel = {};
+  angularSurface = null;
+  angularDataModel = {};
 
   // Clear server state if available
   if (serverAvailable) {
@@ -1221,8 +1281,10 @@ async function clearSession() {
   // Reset UI
   surfaceLit.processMessages([{ type: 'deleteSurface', surfaceId: 'main' }]);
   renderReact();
+  renderAngular();
   emptyStateLit.style.display = 'block';
   emptyStateReact.style.display = 'block';
+  if (emptyStateAngular) emptyStateAngular.style.display = 'block';
   jsonOutput.textContent = '// Generated JSON will appear here';
 
   // Reset code previews
@@ -1290,4 +1352,12 @@ copyJsonBtn.addEventListener('click', async () => {
 
   // Initialize React root
   renderReact();
+
+  // Initialize Angular custom element (disabled pending bundle format compatibility)
+  // try {
+  //   await initAngularElement();
+  //   console.log('Angular renderer initialized');
+  // } catch (error) {
+  //   console.error('Failed to initialize Angular renderer:', error);
+  // }
 })();
