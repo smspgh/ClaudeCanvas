@@ -1,11 +1,11 @@
 /**
  * ClaudeCanvas Demo Application
- * Side-by-side comparison of Lit and React renderers
+ * Multi-renderer comparison: Lit, React (Live), Angular, Flutter, Android (Code Preview)
  */
 
 import '@claude-canvas/renderer-lit';
 import type { CcSurface } from '@claude-canvas/renderer-lit';
-import type { AgentToClientMessage, Surface, DataModel } from '@claude-canvas/core';
+import type { AgentToClientMessage, Surface, DataModel, ComponentDefinition } from '@claude-canvas/core';
 import { setByPointer } from '@claude-canvas/core';
 
 // React imports
@@ -29,10 +29,18 @@ const loading = document.getElementById('loading') as HTMLDivElement;
 const jsonOutput = document.getElementById('json-output') as HTMLDivElement;
 const serverStatus = document.getElementById('server-status') as HTMLDivElement;
 const copyJsonBtn = document.getElementById('copy-json') as HTMLButtonElement;
-const mainContent = document.getElementById('main-content') as HTMLDivElement;
-const litPanel = document.getElementById('lit-panel') as HTMLDivElement;
-const reactPanel = document.getElementById('react-panel') as HTMLDivElement;
-const viewToggleBtns = document.querySelectorAll('.view-btn') as NodeListOf<HTMLButtonElement>;
+
+// Renderer selection elements
+const rendererChips = document.querySelectorAll('.renderer-chip') as NodeListOf<HTMLDivElement>;
+const rendererPanels = document.querySelectorAll('.renderer-panel') as NodeListOf<HTMLDivElement>;
+
+// Code output elements
+const angularCode = document.getElementById('angular-code') as HTMLPreElement;
+const angularTemplateCode = document.getElementById('angular-template-code') as HTMLPreElement;
+const flutterCode = document.getElementById('flutter-code') as HTMLPreElement;
+const flutterStateCode = document.getElementById('flutter-state-code') as HTMLPreElement;
+const androidCode = document.getElementById('android-code') as HTMLPreElement;
+const androidViewModelCode = document.getElementById('android-viewmodel-code') as HTMLPreElement;
 
 // React state
 let reactRoot: Root | null = null;
@@ -92,19 +100,612 @@ function processMessagesReact(messages: AgentToClientMessage[]) {
   renderReact();
 }
 
+// ============================================================================
+// CODE GENERATORS
+// ============================================================================
+
+function indent(code: string, spaces: number): string {
+  const pad = ' '.repeat(spaces);
+  return code.split('\n').map(line => pad + line).join('\n');
+}
+
+function toKebabCase(str: string): string {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+function toPascalCase(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ============================================================================
+// ANGULAR CODE GENERATOR
+// ============================================================================
+
+function generateAngularComponent(surface: Surface): string {
+  const componentName = toPascalCase(surface.id || 'Generated') + 'Component';
+
+  return `import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CcSurfaceComponent } from '@claude-canvas/renderer-angular';
+
+@Component({
+  selector: 'app-${toKebabCase(surface.id || 'generated')}',
+  standalone: true,
+  imports: [CommonModule, CcSurfaceComponent],
+  templateUrl: './${toKebabCase(surface.id || 'generated')}.component.html',
+})
+export class ${componentName} {
+  surface = ${JSON.stringify(surface, null, 2).split('\n').map((l, i) => i === 0 ? l : '  ' + l).join('\n')};
+
+  dataModel = signal<Record<string, unknown>>({});
+
+  onAction(event: { action: { type: string }; dataModel: unknown }) {
+    console.log('User action:', event);
+    if (event.action.type === 'submit') {
+      // Handle form submission
+      console.log('Form data:', event.dataModel);
+    }
+  }
+
+  onDataModelChange(dataModel: Record<string, unknown>) {
+    this.dataModel.set(dataModel);
+  }
+}`;
+}
+
+function generateAngularTemplate(surface: Surface): string {
+  return `<cc-surface
+  [surface]="surface"
+  [initialDataModel]="dataModel()"
+  (action)="onAction($event)"
+  (dataModelChange)="onDataModelChange($event)">
+</cc-surface>`;
+}
+
+// ============================================================================
+// FLUTTER CODE GENERATOR
+// ============================================================================
+
+function componentToFlutterWidget(comp: ComponentDefinition, indentLevel: number = 0): string {
+  const pad = '  '.repeat(indentLevel);
+  const childPad = '  '.repeat(indentLevel + 1);
+
+  switch (comp.component) {
+    case 'Column':
+      return `${pad}Column(
+${childPad}crossAxisAlignment: CrossAxisAlignment.${comp.align === 'center' ? 'center' : 'start'},
+${childPad}children: [
+${(comp.children as ComponentDefinition[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
+${childPad}],
+${pad})`;
+
+    case 'Row':
+      return `${pad}Row(
+${childPad}mainAxisAlignment: MainAxisAlignment.${comp.justify === 'spaceBetween' ? 'spaceBetween' : 'start'},
+${childPad}children: [
+${(comp.children as ComponentDefinition[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
+${childPad}],
+${pad})`;
+
+    case 'Card':
+      return `${pad}Card(
+${childPad}elevation: ${comp.elevated ? '4' : '0'},
+${childPad}child: Padding(
+${childPad}  padding: EdgeInsets.all(16),
+${childPad}  child: ${(comp.children as ComponentDefinition[])?.[0] ? componentToFlutterWidget((comp.children as ComponentDefinition[])[0], 0).trim() : 'SizedBox()'},
+${childPad}),
+${pad})`;
+
+    case 'Text':
+      const textStyle = comp.textStyle === 'heading1' ? 'headlineLarge' :
+                       comp.textStyle === 'heading2' ? 'headlineMedium' :
+                       comp.textStyle === 'heading3' ? 'titleLarge' : 'bodyMedium';
+      return `${pad}Text(
+${childPad}'${comp.content || ''}',
+${childPad}style: Theme.of(context).textTheme.${textStyle},
+${pad})`;
+
+    case 'TextField':
+      return `${pad}TextField(
+${childPad}decoration: InputDecoration(
+${childPad}  labelText: '${comp.label || ''}',
+${childPad}  hintText: '${comp.placeholder || ''}',
+${childPad}),
+${childPad}onChanged: (value) => _updateDataModel('${comp.valuePath}', value),
+${pad})`;
+
+    case 'Button':
+      const variant = comp.variant === 'outline' ? 'OutlinedButton' :
+                     comp.variant === 'secondary' ? 'TextButton' : 'ElevatedButton';
+      return `${pad}${variant}(
+${childPad}onPressed: () => _handleAction('${(comp.action as { type: string })?.type || 'custom'}'),
+${childPad}child: Text('${comp.label || 'Button'}'),
+${pad})`;
+
+    case 'Checkbox':
+      return `${pad}CheckboxListTile(
+${childPad}title: Text('${comp.label || ''}'),
+${childPad}value: _getDataModel('${comp.valuePath}') ?? false,
+${childPad}onChanged: (value) => _updateDataModel('${comp.valuePath}', value),
+${pad})`;
+
+    case 'Select':
+      return `${pad}DropdownButtonFormField<String>(
+${childPad}decoration: InputDecoration(labelText: '${comp.label || ''}'),
+${childPad}value: _getDataModel('${comp.valuePath}'),
+${childPad}items: [
+${(comp.options as Array<{label: string, value: string}> || []).map(o => `${childPad}  DropdownMenuItem(value: '${o.value}', child: Text('${o.label}'))`).join(',\n')},
+${childPad}],
+${childPad}onChanged: (value) => _updateDataModel('${comp.valuePath}', value),
+${pad})`;
+
+    case 'Slider':
+      return `${pad}Column(
+${childPad}crossAxisAlignment: CrossAxisAlignment.start,
+${childPad}children: [
+${childPad}  Text('${comp.label || ''}'),
+${childPad}  Slider(
+${childPad}    value: (_getDataModel('${comp.valuePath}') ?? ${comp.min ?? 0}).toDouble(),
+${childPad}    min: ${comp.min ?? 0}.0,
+${childPad}    max: ${comp.max ?? 100}.0,
+${childPad}    divisions: ${Math.floor(((comp.max as number) ?? 100) - ((comp.min as number) ?? 0))},
+${childPad}    onChanged: (value) => _updateDataModel('${comp.valuePath}', value.round()),
+${childPad}  ),
+${childPad}],
+${pad})`;
+
+    default:
+      return `${pad}// TODO: Implement ${comp.component}
+${pad}SizedBox()`;
+  }
+}
+
+function generateFlutterWidget(surface: Surface): string {
+  const className = toPascalCase(surface.id || 'Generated') + 'Widget';
+
+  const widgetCode = (surface.components || []).map(c => componentToFlutterWidget(c, 3)).join(',\n');
+
+  return `import 'package:flutter/material.dart';
+import 'package:claude_canvas_renderer/claude_canvas_renderer.dart';
+
+class ${className} extends StatefulWidget {
+  const ${className}({super.key});
+
+  @override
+  State<${className}> createState() => _${className}State();
+}
+
+class _${className}State extends State<${className}> {
+  Map<String, dynamic> _dataModel = {};
+
+  dynamic _getDataModel(String path) {
+    final parts = path.split('/').where((p) => p.isNotEmpty).toList();
+    dynamic current = _dataModel;
+    for (final part in parts) {
+      if (current is Map && current.containsKey(part)) {
+        current = current[part];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
+
+  void _updateDataModel(String path, dynamic value) {
+    setState(() {
+      final parts = path.split('/').where((p) => p.isNotEmpty).toList();
+      if (parts.isEmpty) return;
+
+      Map<String, dynamic> current = _dataModel;
+      for (int i = 0; i < parts.length - 1; i++) {
+        current[parts[i]] ??= <String, dynamic>{};
+        current = current[parts[i]] as Map<String, dynamic>;
+      }
+      current[parts.last] = value;
+    });
+  }
+
+  void _handleAction(String type) {
+    if (type == 'submit') {
+      // Handle form submission
+      print('Form submitted: $_dataModel');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+${widgetCode}
+        ],
+      ),
+    );
+  }
+}`;
+}
+
+function generateFlutterState(surface: Surface): string {
+  return `// State management for ${surface.id || 'generated'} widget
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Data model state
+final dataModelProvider = StateNotifierProvider<DataModelNotifier, Map<String, dynamic>>((ref) {
+  return DataModelNotifier();
+});
+
+class DataModelNotifier extends StateNotifier<Map<String, dynamic>> {
+  DataModelNotifier() : super({});
+
+  void update(String path, dynamic value) {
+    final parts = path.split('/').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return;
+
+    final newState = Map<String, dynamic>.from(state);
+    Map<String, dynamic> current = newState;
+
+    for (int i = 0; i < parts.length - 1; i++) {
+      current[parts[i]] ??= <String, dynamic>{};
+      current = Map<String, dynamic>.from(current[parts[i]] as Map);
+    }
+    current[parts.last] = value;
+
+    state = newState;
+  }
+
+  dynamic get(String path) {
+    final parts = path.split('/').where((p) => p.isNotEmpty).toList();
+    dynamic current = state;
+    for (final part in parts) {
+      if (current is Map && current.containsKey(part)) {
+        current = current[part];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
+
+  void reset() {
+    state = {};
+  }
+}
+
+// Action handler
+final actionHandlerProvider = Provider((ref) {
+  return ActionHandler(ref);
+});
+
+class ActionHandler {
+  final Ref _ref;
+  ActionHandler(this._ref);
+
+  void handle(String type, {Map<String, dynamic>? payload}) {
+    switch (type) {
+      case 'submit':
+        final dataModel = _ref.read(dataModelProvider);
+        print('Form submitted: \$dataModel');
+        break;
+      case 'navigate':
+        // Handle navigation
+        break;
+      case 'dismiss':
+        // Handle dismissal
+        break;
+    }
+  }
+}`;
+}
+
+// ============================================================================
+// ANDROID/KOTLIN CODE GENERATOR
+// ============================================================================
+
+function componentToKotlinComposable(comp: ComponentDefinition, indentLevel: number = 0): string {
+  const pad = '    '.repeat(indentLevel);
+  const childPad = '    '.repeat(indentLevel + 1);
+
+  switch (comp.component) {
+    case 'Column':
+      return `${pad}Column(
+${childPad}verticalArrangement = Arrangement.spacedBy(${comp.gap || 8}.dp),
+${childPad}horizontalAlignment = Alignment.${comp.align === 'center' ? 'CenterHorizontally' : 'Start'}
+${pad}) {
+${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
+${pad}}`;
+
+    case 'Row':
+      return `${pad}Row(
+${childPad}horizontalArrangement = Arrangement.${comp.justify === 'spaceBetween' ? 'SpaceBetween' : `spacedBy(${comp.gap || 8}.dp)`},
+${childPad}verticalAlignment = Alignment.CenterVertically
+${pad}) {
+${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
+${pad}}`;
+
+    case 'Card':
+      return `${pad}Card(
+${childPad}elevation = CardDefaults.cardElevation(defaultElevation = ${comp.elevated ? '4' : '0'}.dp)
+${pad}) {
+${childPad}Column(modifier = Modifier.padding(16.dp)) {
+${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 2)).join('\n')}
+${childPad}}
+${pad}}`;
+
+    case 'Text':
+      const style = comp.textStyle === 'heading1' ? 'headlineLarge' :
+                   comp.textStyle === 'heading2' ? 'headlineMedium' :
+                   comp.textStyle === 'heading3' ? 'titleLarge' : 'bodyMedium';
+      return `${pad}Text(
+${childPad}text = "${comp.content || ''}",
+${childPad}style = MaterialTheme.typography.${style}
+${pad})`;
+
+    case 'TextField':
+      return `${pad}OutlinedTextField(
+${childPad}value = viewModel.getField("${comp.valuePath}") ?: "",
+${childPad}onValueChange = { viewModel.updateField("${comp.valuePath}", it) },
+${childPad}label = { Text("${comp.label || ''}") },
+${childPad}placeholder = { Text("${comp.placeholder || ''}") },
+${childPad}modifier = Modifier.fillMaxWidth()
+${pad})`;
+
+    case 'Button':
+      const buttonType = comp.variant === 'outline' ? 'OutlinedButton' :
+                        comp.variant === 'secondary' ? 'TextButton' : 'Button';
+      return `${pad}${buttonType}(
+${childPad}onClick = { viewModel.handleAction("${(comp.action as { type: string })?.type || 'custom'}") }
+${pad}) {
+${childPad}Text("${comp.label || 'Button'}")
+${pad}}`;
+
+    case 'Checkbox':
+      return `${pad}Row(
+${childPad}verticalAlignment = Alignment.CenterVertically,
+${childPad}modifier = Modifier.clickable {
+${childPad}    viewModel.toggleField("${comp.valuePath}")
+${childPad}}
+${pad}) {
+${childPad}Checkbox(
+${childPad}    checked = viewModel.getField("${comp.valuePath}") == true,
+${childPad}    onCheckedChange = { viewModel.updateField("${comp.valuePath}", it) }
+${childPad})
+${childPad}Text("${comp.label || ''}")
+${pad}}`;
+
+    case 'Select':
+      return `${pad}// Dropdown for ${comp.label || 'Select'}
+${pad}ExposedDropdownMenuBox(
+${childPad}expanded = expanded,
+${childPad}onExpandedChange = { expanded = !expanded }
+${pad}) {
+${childPad}OutlinedTextField(
+${childPad}    value = viewModel.getField("${comp.valuePath}") ?: "",
+${childPad}    onValueChange = {},
+${childPad}    readOnly = true,
+${childPad}    label = { Text("${comp.label || ''}") },
+${childPad}    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+${childPad}    modifier = Modifier.menuAnchor().fillMaxWidth()
+${childPad})
+${childPad}ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+${(comp.options as Array<{label: string, value: string}> || []).map(o => `${childPad}    DropdownMenuItem(text = { Text("${o.label}") }, onClick = { viewModel.updateField("${comp.valuePath}", "${o.value}"); expanded = false })`).join('\n')}
+${childPad}}
+${pad}}`;
+
+    case 'Slider':
+      return `${pad}Column {
+${childPad}Text("${comp.label || ''}")
+${childPad}Slider(
+${childPad}    value = (viewModel.getField("${comp.valuePath}") as? Number)?.toFloat() ?: ${comp.min || 0}f,
+${childPad}    onValueChange = { viewModel.updateField("${comp.valuePath}", it.toInt()) },
+${childPad}    valueRange = ${comp.min || 0}f..${comp.max || 100}f,
+${childPad}    steps = ${Math.floor(((comp.max as number) ?? 100) - ((comp.min as number) ?? 0)) - 1}
+${childPad})
+${pad}}`;
+
+    default:
+      return `${pad}// TODO: Implement ${comp.component}
+${pad}Spacer(modifier = Modifier.height(8.dp))`;
+  }
+}
+
+function generateAndroidComposable(surface: Surface): string {
+  const screenName = toPascalCase(surface.id || 'Generated') + 'Screen';
+
+  const composableCode = (surface.components || []).map(c => componentToKotlinComposable(c, 2)).join('\n');
+
+  return `package com.example.app.ui.screens
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ${screenName}(
+    viewModel: ${screenName}ViewModel = viewModel()
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+${composableCode}
+    }
+}`;
+}
+
+function generateAndroidViewModel(surface: Surface): string {
+  const screenName = toPascalCase(surface.id || 'Generated') + 'Screen';
+
+  return `package com.example.app.ui.screens
+
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+class ${screenName}ViewModel : ViewModel() {
+
+    private val _dataModel = MutableStateFlow<Map<String, Any?>>(emptyMap())
+    val dataModel: StateFlow<Map<String, Any?>> = _dataModel.asStateFlow()
+
+    fun getField(path: String): Any? {
+        val parts = path.split("/").filter { it.isNotEmpty() }
+        var current: Any? = _dataModel.value
+        for (part in parts) {
+            current = (current as? Map<*, *>)?.get(part)
+        }
+        return current
+    }
+
+    fun updateField(path: String, value: Any?) {
+        val parts = path.split("/").filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return
+
+        _dataModel.update { currentMap ->
+            val newMap = currentMap.toMutableMap()
+            var current = newMap
+
+            for (i in 0 until parts.size - 1) {
+                val part = parts[i]
+                if (!current.containsKey(part) || current[part] !is MutableMap<*, *>) {
+                    current[part] = mutableMapOf<String, Any?>()
+                }
+                @Suppress("UNCHECKED_CAST")
+                current = current[part] as MutableMap<String, Any?>
+            }
+            current[parts.last()] = value
+
+            newMap
+        }
+    }
+
+    fun toggleField(path: String) {
+        val current = getField(path) as? Boolean ?: false
+        updateField(path, !current)
+    }
+
+    fun handleAction(type: String) {
+        when (type) {
+            "submit" -> {
+                // Handle form submission
+                println("Form submitted: \${_dataModel.value}")
+            }
+            "navigate" -> {
+                // Handle navigation
+            }
+            "dismiss" -> {
+                // Handle dismissal
+            }
+        }
+    }
+
+    fun reset() {
+        _dataModel.value = emptyMap()
+    }
+}`;
+}
+
+// ============================================================================
+// UPDATE CODE PREVIEWS
+// ============================================================================
+
+function updateCodePreviews(surface: Surface) {
+  // Angular
+  angularCode.textContent = generateAngularComponent(surface);
+  angularTemplateCode.textContent = generateAngularTemplate(surface);
+
+  // Flutter
+  flutterCode.textContent = generateFlutterWidget(surface);
+  flutterStateCode.textContent = generateFlutterState(surface);
+
+  // Android
+  androidCode.textContent = generateAndroidComposable(surface);
+  androidViewModelCode.textContent = generateAndroidViewModel(surface);
+}
+
+// ============================================================================
+// RENDERER SELECTION
+// ============================================================================
+
+function setupRendererSelection() {
+  rendererChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const renderer = chip.dataset.renderer;
+      if (!renderer) return;
+
+      // Toggle selection
+      chip.classList.toggle('selected');
+
+      // Update panel visibility
+      const panel = document.querySelector(`.renderer-panel[data-renderer="${renderer}"]`) as HTMLDivElement;
+      if (panel) {
+        if (chip.classList.contains('selected')) {
+          panel.classList.add('visible');
+        } else {
+          panel.classList.remove('visible');
+        }
+      }
+    });
+  });
+}
+
+// Setup code tabs
+function setupCodeTabs() {
+  document.querySelectorAll('.code-tabs').forEach(tabContainer => {
+    const tabs = tabContainer.querySelectorAll('.code-tab');
+    const panel = tabContainer.closest('.renderer-panel');
+    if (!panel) return;
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = (tab as HTMLElement).dataset.tab;
+        if (!tabName) return;
+
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update content visibility
+        panel.querySelectorAll('.code-content').forEach(content => {
+          content.classList.remove('active');
+        });
+
+        const contentId = panel.id.replace('-panel', `-${tabName}`);
+        const content = document.getElementById(contentId);
+        if (content) {
+          content.classList.add('active');
+        }
+      });
+    });
+  });
+}
+
 // Check server connection
 async function checkServer(): Promise<boolean> {
   try {
     const response = await fetch(`${SERVER_URL}/health`);
     if (response.ok) {
-      serverStatus.textContent = '🟢 Connected to Claude Code';
+      serverStatus.textContent = 'Connected to Claude Code';
       serverStatus.style.color = '#22c55e';
       return true;
     }
   } catch {
     // Server not available
   }
-  serverStatus.textContent = '🔴 Server offline - using demo mode';
+  serverStatus.textContent = 'Server offline - using demo mode';
   serverStatus.style.color = '#ef4444';
   return false;
 }
@@ -577,6 +1178,8 @@ async function generateUI() {
   for (const msg of messages) {
     if (msg.type === 'surfaceUpdate') {
       currentSurface = msg.surface;
+      // Update code previews
+      updateCodePreviews(msg.surface);
     } else if (msg.type === 'dataModelUpdate') {
       if (msg.path === '/') {
         currentDataModel = msg.data as DataModel;
@@ -621,6 +1224,15 @@ async function clearSession() {
   emptyStateLit.style.display = 'block';
   emptyStateReact.style.display = 'block';
   jsonOutput.textContent = '// Generated JSON will appear here';
+
+  // Reset code previews
+  angularCode.textContent = '// Generate a UI to see Angular code';
+  angularTemplateCode.textContent = '// Generate a UI to see Angular template';
+  flutterCode.textContent = '// Generate a UI to see Flutter code';
+  flutterStateCode.textContent = '// Generate a UI to see Flutter state';
+  androidCode.textContent = '// Generate a UI to see Android code';
+  androidViewModelCode.textContent = '// Generate a UI to see Android ViewModel';
+
   updateIterationIndicator();
 
   console.log('[ClaudeCanvas] Session cleared - next prompt will start fresh');
@@ -661,42 +1273,20 @@ copyJsonBtn.addEventListener('click', async () => {
   }
 });
 
-// View toggle
-let currentView = 'both';
-viewToggleBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const view = btn.dataset.view ?? 'both';
-    currentView = view;
-
-    // Update button states
-    viewToggleBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // Update layout
-    if (view === 'both') {
-      mainContent.classList.remove('single-view');
-      litPanel.style.display = '';
-      reactPanel.style.display = '';
-    } else if (view === 'lit') {
-      mainContent.classList.add('single-view');
-      litPanel.style.display = '';
-      reactPanel.style.display = 'none';
-    } else if (view === 'react') {
-      mainContent.classList.add('single-view');
-      litPanel.style.display = 'none';
-      reactPanel.style.display = '';
-    }
-  });
-});
-
 // Initialize
 (async () => {
   serverAvailable = await checkServer();
-  console.log('ClaudeCanvas Dual Renderer Demo loaded');
+  console.log('ClaudeCanvas Multi-Renderer Demo loaded');
   console.log('Server available:', serverAvailable);
   if (!serverAvailable) {
     console.log('Demo prompts: "dashboard", "charts", "editor", "settings", "login", "profile"');
   }
+
+  // Setup renderer selection
+  setupRendererSelection();
+
+  // Setup code tabs
+  setupCodeTabs();
 
   // Initialize React root
   renderReact();

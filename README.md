@@ -10,10 +10,10 @@ ClaudeCanvas is a framework that allows AI agents to generate UIs declaratively 
 
 - **Multi-Provider Support** - Use Claude, OpenAI, Gemini, or Claude Code CLI
 - **A2A Protocol Compatible** - Works with Agent-to-Agent protocol transports
-- **Dual Renderers** - Lit (Web Components) and React renderers included
+- **5 Platform Renderers** - Web (Lit, React), Mobile (Flutter, Android/Kotlin), and Angular
 - **Declarative JSON Format** - UIs are defined as data, not code
 - **Security-First** - Agents can only use pre-approved components
-- **Type-Safe** - Full TypeScript support
+- **Type-Safe** - Full TypeScript/Dart/Kotlin support
 - **31 Components** - Forms, charts, data tables, media players, and more
 
 ## Architecture
@@ -35,13 +35,16 @@ ClaudeCanvas is a framework that allows AI agents to generate UIs declaratively 
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `@claude-canvas/core` | Core types, schemas, A2A protocol utilities |
-| `@claude-canvas/renderer-lit` | Lit web components renderer |
-| `@claude-canvas/renderer-react` | React components renderer |
-| `@claude-canvas/client` | Multi-provider LLM client |
-| `@claude-canvas/mcp-server` | MCP server for Claude Code integration |
+| Package | Platform | Description |
+|---------|----------|-------------|
+| `@claude-canvas/core` | All | Core types, schemas, A2A protocol utilities |
+| `@claude-canvas/renderer-lit` | Web | Lit web components renderer |
+| `@claude-canvas/renderer-react` | Web | React components renderer |
+| `@claude-canvas/renderer-angular` | Web | Angular 17/18 components renderer |
+| `claude_canvas_renderer` | Mobile | Flutter/Dart renderer (pub.dev) |
+| `com.anthropic:claude-canvas-renderer` | Android | Kotlin/Jetpack Compose renderer (Maven) |
+| `@claude-canvas/client` | Server | Multi-provider LLM client |
+| `@claude-canvas/mcp-server` | Server | MCP server for Claude Code integration |
 
 ## Quick Start
 
@@ -115,6 +118,8 @@ cd samples/agent && pnpm dev
 
 ## Renderers
 
+ClaudeCanvas provides 5 platform-native renderers, all implementing the same 31 components.
+
 ### Lit (Web Components)
 
 ```html
@@ -156,6 +161,73 @@ function App() {
       onDataModelChange={setDataModel}
     />
   );
+}
+```
+
+### Angular
+
+```typescript
+import { CcSurfaceComponent } from '@anthropic/claude-canvas-renderer-angular';
+
+@Component({
+  standalone: true,
+  imports: [CcSurfaceComponent],
+  template: `
+    <cc-surface
+      [surface]="surface"
+      [initialDataModel]="dataModel"
+      (action)="onAction($event)"
+      (dataModelChange)="onDataModelChange($event)">
+    </cc-surface>
+  `
+})
+export class AppComponent {
+  surface: Surface = { version: '1.0', components: [] };
+  dataModel = {};
+}
+```
+
+### Flutter
+
+```dart
+import 'package:claude_canvas_renderer/claude_canvas_renderer.dart';
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CcSurface(
+      surface: Surface(
+        version: '1.0',
+        components: [
+          ComponentDefinition(component: 'Text', properties: {'content': 'Hello'}),
+        ],
+      ),
+      onAction: (action) => print('Action: ${action.type}'),
+    );
+  }
+}
+```
+
+### Android (Kotlin/Jetpack Compose)
+
+```kotlin
+import com.anthropic.claudecanvas.*
+
+@Composable
+fun MyScreen() {
+    val surface = Surface(
+        version = "1.0",
+        components = listOf(
+            ComponentDefinition(component = "Text", properties = buildJsonObject {
+                put("content", "Hello from Android!")
+            })
+        )
+    )
+
+    CcSurface(
+        surface = surface,
+        onAction = { action -> println("Action: ${action.type}") }
+    )
 }
 ```
 
@@ -291,8 +363,11 @@ PORT=3001
 ClaudeCanvas/
 ├── packages/
 │   ├── core/              # Types, schemas, A2A protocol
-│   ├── renderer-lit/      # Lit web components
-│   ├── renderer-react/    # React components
+│   ├── renderer-lit/      # Lit web components (31 components)
+│   ├── renderer-react/    # React components (31 components)
+│   ├── renderer-angular/  # Angular 17/18 components (31 components)
+│   ├── renderer-flutter/  # Flutter/Dart widgets (31 components)
+│   ├── renderer-android/  # Kotlin/Jetpack Compose (31 components)
 │   ├── client/            # Multi-provider LLM client
 │   └── mcp-server/        # Claude Code MCP server
 ├── samples/

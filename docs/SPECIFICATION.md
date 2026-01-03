@@ -30,10 +30,15 @@ ClaudeCanvas is compatible with Google's A2UI (Agent-to-User Interface) specific
 | Declarative JSON | Yes | Yes |
 | React Renderer | Yes | Planned |
 | Lit Renderer | Yes | Yes |
-| Flutter Renderer | Planned | Yes |
-| Conditional Visibility | Yes (visibleIf) | Limited |
+| Flutter Renderer | Yes | Yes |
+| Angular Renderer | Yes | No |
+| Android/Kotlin Renderer | Yes | No |
+| Component Count | 31 | ~12 |
+| Conditional Visibility | Yes (visibleIf with operators) | Limited |
 | Charts/DataTable | Yes | No |
 | Rich Text Editor | Yes | No |
+| CodeBlock with Syntax | Yes | No |
+| File Upload | Yes | No |
 | A2A Protocol | Yes | Yes |
 | Multi-Provider (OpenAI, Gemini) | Yes | No |
 
@@ -604,6 +609,8 @@ Renderers support theming via CSS custom properties:
 
 ## 7. Renderers
 
+ClaudeCanvas provides 5 platform-native renderers, all implementing 31 components.
+
 ### 7.1 Lit Web Components
 ```html
 <script type="module">
@@ -623,10 +630,44 @@ import { CcSurface } from '@claude-canvas/renderer-react';
 />
 ```
 
-### 7.3 Future Renderers
-- Flutter (planned)
+### 7.3 Angular
+```typescript
+import { CcSurfaceComponent } from '@anthropic/claude-canvas-renderer-angular';
+
+@Component({
+  standalone: true,
+  imports: [CcSurfaceComponent],
+  template: `<cc-surface [surface]="surface" (action)="onAction($event)"></cc-surface>`
+})
+export class AppComponent {}
+```
+
+### 7.4 Flutter
+```dart
+import 'package:claude_canvas_renderer/claude_canvas_renderer.dart';
+
+CcSurface(
+  surface: surface,
+  onAction: (action) => handleAction(action),
+)
+```
+
+### 7.5 Android (Kotlin/Jetpack Compose)
+```kotlin
+import com.anthropic.claudecanvas.*
+
+@Composable
+fun MyScreen() {
+    CcSurface(
+        surface = surface,
+        onAction = { action -> handleAction(action) }
+    )
+}
+```
+
+### 7.6 Future Renderers
+- iOS/SwiftUI (planned)
 - React Native (planned)
-- SwiftUI (planned)
 
 ## 8. MCP Server Integration
 
@@ -651,9 +692,18 @@ See `packages/mcp-server/src/schema.ts` for component JSON schemas.
 
 ## Appendix C: Changelog
 
-### 1.0.0 (2026-01-02)
+### 1.1.0 (2026-01-02)
+- Added Flutter renderer (31 components)
+- Added Angular renderer (31 components)
+- Added Android/Kotlin Jetpack Compose renderer (31 components)
+- Expanded component count to 31
+- Added CodeBlock, Markdown, Link, FileUpload, ButtonGroup, Chip components
+- Enhanced visibleIf with additional operators (contains, startsWith, endsWith, empty, notEmpty)
+- Added compound conditions (and/or) for visibleIf
+
+### 1.0.0 (2026-01-01)
 - Initial specification
-- 25+ component types
+- 25 component types
 - Lit and React renderers
 - MCP server integration
 - Conditional visibility (visibleIf)
