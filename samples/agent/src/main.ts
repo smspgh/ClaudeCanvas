@@ -5,7 +5,7 @@
 
 import '@claude-canvas/renderer-lit';
 import type { CcSurface } from '@claude-canvas/renderer-lit';
-import type { AgentToClientMessage, Surface, DataModel, ComponentDefinition } from '@claude-canvas/core';
+import type { AgentToClientMessage, Surface, DataModel, Component } from '@claude-canvas/core';
 import { setByPointer } from '@claude-canvas/core';
 
 // React imports
@@ -222,7 +222,7 @@ function generateAngularTemplate(surface: Surface): string {
 // FLUTTER CODE GENERATOR
 // ============================================================================
 
-function componentToFlutterWidget(comp: ComponentDefinition, indentLevel: number = 0): string {
+function componentToFlutterWidget(comp: Component, indentLevel: number = 0): string {
   const pad = '  '.repeat(indentLevel);
   const childPad = '  '.repeat(indentLevel + 1);
 
@@ -231,7 +231,7 @@ function componentToFlutterWidget(comp: ComponentDefinition, indentLevel: number
       return `${pad}Column(
 ${childPad}crossAxisAlignment: CrossAxisAlignment.${comp.align === 'center' ? 'center' : 'start'},
 ${childPad}children: [
-${(comp.children as ComponentDefinition[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
+${(comp.children as Component[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
 ${childPad}],
 ${pad})`;
 
@@ -239,7 +239,7 @@ ${pad})`;
       return `${pad}Row(
 ${childPad}mainAxisAlignment: MainAxisAlignment.${comp.justify === 'spaceBetween' ? 'spaceBetween' : 'start'},
 ${childPad}children: [
-${(comp.children as ComponentDefinition[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
+${(comp.children as Component[] || []).map(c => componentToFlutterWidget(c, indentLevel + 2)).join(',\n')},
 ${childPad}],
 ${pad})`;
 
@@ -248,7 +248,7 @@ ${pad})`;
 ${childPad}elevation: ${comp.elevated ? '4' : '0'},
 ${childPad}child: Padding(
 ${childPad}  padding: EdgeInsets.all(16),
-${childPad}  child: ${(comp.children as ComponentDefinition[])?.[0] ? componentToFlutterWidget((comp.children as ComponentDefinition[])[0], 0).trim() : 'SizedBox()'},
+${childPad}  child: ${(comp.children as Component[])?.[0] ? componentToFlutterWidget((comp.children as Component[])[0], 0).trim() : 'SizedBox()'},
 ${childPad}),
 ${pad})`;
 
@@ -460,7 +460,7 @@ class ActionHandler {
 // ANDROID/KOTLIN CODE GENERATOR
 // ============================================================================
 
-function componentToKotlinComposable(comp: ComponentDefinition, indentLevel: number = 0): string {
+function componentToKotlinComposable(comp: Component, indentLevel: number = 0): string {
   const pad = '    '.repeat(indentLevel);
   const childPad = '    '.repeat(indentLevel + 1);
 
@@ -470,7 +470,7 @@ function componentToKotlinComposable(comp: ComponentDefinition, indentLevel: num
 ${childPad}verticalArrangement = Arrangement.spacedBy(${comp.gap || 8}.dp),
 ${childPad}horizontalAlignment = Alignment.${comp.align === 'center' ? 'CenterHorizontally' : 'Start'}
 ${pad}) {
-${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
+${(comp.children as Component[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
 ${pad}}`;
 
     case 'Row':
@@ -478,7 +478,7 @@ ${pad}}`;
 ${childPad}horizontalArrangement = Arrangement.${comp.justify === 'spaceBetween' ? 'SpaceBetween' : `spacedBy(${comp.gap || 8}.dp)`},
 ${childPad}verticalAlignment = Alignment.CenterVertically
 ${pad}) {
-${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
+${(comp.children as Component[] || []).map(c => componentToKotlinComposable(c, indentLevel + 1)).join('\n')}
 ${pad}}`;
 
     case 'Card':
@@ -486,7 +486,7 @@ ${pad}}`;
 ${childPad}elevation = CardDefaults.cardElevation(defaultElevation = ${comp.elevated ? '4' : '0'}.dp)
 ${pad}) {
 ${childPad}Column(modifier = Modifier.padding(16.dp)) {
-${(comp.children as ComponentDefinition[] || []).map(c => componentToKotlinComposable(c, indentLevel + 2)).join('\n')}
+${(comp.children as Component[] || []).map(c => componentToKotlinComposable(c, indentLevel + 2)).join('\n')}
 ${childPad}}
 ${pad}}`;
 
