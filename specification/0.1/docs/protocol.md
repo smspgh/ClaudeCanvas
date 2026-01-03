@@ -224,4 +224,4 @@ A complete example of a contact form:
 
 ## License
 
-Apache 2.0
+MIT

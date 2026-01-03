@@ -25,14 +25,14 @@ ClaudeCanvas enables AI agents (like Claude) to generate user interfaces by outp
 
 ```bash
 # Install core types
-npm install @claude-canvas/core
+pnpm install @claude-canvas/core
 
 # Install renderer (choose one)
-npm install @claude-canvas/renderer-lit  # Web Components
-npm install @claude-canvas/renderer-react # React
+pnpm install @claude-canvas/renderer-lit  # Web Components
+pnpm install @claude-canvas/renderer-react # React
 
 # Optional: MCP server for Claude Code
-npm install @claude-canvas/mcp-server
+pnpm install @claude-canvas/mcp-server
 ```
 
 ## Basic Example
@@ -73,4 +73,4 @@ npm install @claude-canvas/mcp-server
 
 ## License
 
-Apache 2.0
+MIT

@@ -28,13 +28,14 @@ ClaudeCanvas is compatible with Google's A2UI (Agent-to-User Interface) specific
 | Feature | ClaudeCanvas | A2UI |
 |---------|-------------|------|
 | Declarative JSON | Yes | Yes |
-| React Renderer | Yes | No |
-| Lit Renderer | Yes | Planned |
+| React Renderer | Yes | Planned |
+| Lit Renderer | Yes | Yes |
 | Flutter Renderer | Planned | Yes |
 | Conditional Visibility | Yes (visibleIf) | Limited |
 | Charts/DataTable | Yes | No |
 | Rich Text Editor | Yes | No |
-| A2A Protocol | Planned | Yes |
+| A2A Protocol | Yes | Yes |
+| Multi-Provider (OpenAI, Gemini) | Yes | No |
 
 ## 2. Protocol
 
