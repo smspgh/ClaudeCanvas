@@ -47,14 +47,18 @@ export class CcSurface extends LitElement {
   processMessage(message: AgentToClientMessage): void {
     switch (message.type) {
       case 'surfaceUpdate':
-        this.surface = message.surface;
+        // Create a new object reference to ensure Lit detects the change
+        this.surface = { ...message.surface };
+        this.requestUpdate();
         break;
       case 'dataModelUpdate':
         this.dataModel = setByPointer(this.dataModel, message.path, message.data);
+        this.requestUpdate();
         break;
       case 'deleteSurface':
         if (this.surface?.id === message.surfaceId) {
           this.surface = null;
+          this.requestUpdate();
         }
         break;
     }

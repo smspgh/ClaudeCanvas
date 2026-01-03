@@ -111,8 +111,14 @@
         box-shadow: 0 0 0 3px var(--cc-primary-light);
       }
 
+      .button-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        justify-content: flex-end;
+      }
+
       .input-area button {
-        align-self: flex-end;
         padding: 0.625rem 1.25rem;
         background: var(--cc-primary);
         color: white;
@@ -130,6 +136,25 @@
       .input-area button:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+      }
+
+      .secondary-btn {
+        background: var(--cc-secondary) !important;
+        color: var(--cc-text) !important;
+        border: 1px solid var(--cc-border) !important;
+      }
+
+      .secondary-btn:hover {
+        background: var(--cc-secondary-hover) !important;
+      }
+
+      .iteration-indicator {
+        font-size: 0.75rem;
+        color: var(--cc-primary);
+        background: var(--cc-primary-light);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
       }
 
       .loading {
@@ -258,7 +283,11 @@
         <div class="panel-content">
           <div class="input-area">
             <textarea id="prompt" placeholder="Example: Create a settings form with a volume slider, theme dropdown, and notification checkboxes"></textarea>
-            <button id="generate">Generate UI</button>
+            <div class="button-row">
+              <button id="new-session" class="secondary-btn" title="Clear current UI and start fresh">New</button>
+              <span id="iteration-indicator" class="iteration-indicator" style="display: none;">Iterating on current UI</span>
+              <button id="generate">Generate UI</button>
+            </div>
           </div>
         </div>
       </div>

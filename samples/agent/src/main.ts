@@ -21,6 +21,8 @@ const surfaceLit = document.getElementById('surface-lit') as CcSurface;
 const surfaceReactContainer = document.getElementById('surface-react') as HTMLDivElement;
 const promptInput = document.getElementById('prompt') as HTMLTextAreaElement;
 const generateBtn = document.getElementById('generate') as HTMLButtonElement;
+const newSessionBtn = document.getElementById('new-session') as HTMLButtonElement;
+const iterationIndicator = document.getElementById('iteration-indicator') as HTMLSpanElement;
 const emptyStateLit = document.getElementById('empty-state-lit') as HTMLDivElement;
 const emptyStateReact = document.getElementById('empty-state-react') as HTMLDivElement;
 const loading = document.getElementById('loading') as HTMLDivElement;
@@ -36,6 +38,19 @@ const viewToggleBtns = document.querySelectorAll('.view-btn') as NodeListOf<HTML
 let reactRoot: Root | null = null;
 let reactSurface: Surface | null = null;
 let reactDataModel: DataModel = {};
+
+// Tracked state for iteration
+let currentSurface: Surface | null = null;
+let currentDataModel: DataModel = {};
+
+// Update iteration indicator
+function updateIterationIndicator() {
+  if (currentSurface && serverAvailable) {
+    iterationIndicator.style.display = 'inline-block';
+  } else {
+    iterationIndicator.style.display = 'none';
+  }
+}
 
 function renderReact() {
   if (!reactRoot) {
@@ -520,13 +535,21 @@ async function generateUI() {
   generateBtn.disabled = true;
 
   let messages: AgentToClientMessage[];
+  let isIteration = false;
 
   if (serverAvailable) {
     try {
+      // Send current state for iteration support
+      const requestBody: Record<string, unknown> = { prompt };
+      if (currentSurface) {
+        requestBody.currentSurface = currentSurface;
+        requestBody.dataModel = currentDataModel;
+      }
+
       const response = await fetch(`${SERVER_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -535,6 +558,7 @@ async function generateUI() {
 
       const data = await response.json();
       messages = data.messages;
+      isIteration = data.isIteration;
     } catch (error) {
       console.error('Server error, falling back to demo:', error);
       messages = matchDemoPrompt(prompt) ?? demoResponses.settings;
@@ -549,16 +573,62 @@ async function generateUI() {
   surfaceLit.processMessages(messages);
   processMessagesReact(messages);
 
+  // Track state for future iterations
+  for (const msg of messages) {
+    if (msg.type === 'surfaceUpdate') {
+      currentSurface = msg.surface;
+    } else if (msg.type === 'dataModelUpdate') {
+      if (msg.path === '/') {
+        currentDataModel = msg.data as DataModel;
+      } else {
+        currentDataModel = setByPointer(currentDataModel, msg.path, msg.data);
+      }
+    }
+  }
+  updateIterationIndicator();
+
   // Show JSON output
-  jsonOutput.textContent = JSON.stringify({ messages }, null, 2);
+  const outputData = isIteration
+    ? { messages, note: 'Iterated on existing UI' }
+    : { messages };
+  jsonOutput.textContent = JSON.stringify(outputData, null, 2);
 
   // Hide loading
   loading.style.display = 'none';
   generateBtn.disabled = false;
 }
 
+// Clear session and start fresh
+async function clearSession() {
+  // Clear local state
+  currentSurface = null;
+  currentDataModel = {};
+  reactSurface = null;
+  reactDataModel = {};
+
+  // Clear server state if available
+  if (serverAvailable) {
+    try {
+      await fetch(`${SERVER_URL}/api/clear`, { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to clear server state:', error);
+    }
+  }
+
+  // Reset UI
+  surfaceLit.processMessages([{ type: 'deleteSurface', surfaceId: 'main' }]);
+  renderReact();
+  emptyStateLit.style.display = 'block';
+  emptyStateReact.style.display = 'block';
+  jsonOutput.textContent = '// Generated JSON will appear here';
+  updateIterationIndicator();
+
+  console.log('[ClaudeCanvas] Session cleared - next prompt will start fresh');
+}
+
 // Event listeners
 generateBtn.addEventListener('click', generateUI);
+newSessionBtn.addEventListener('click', clearSession);
 
 promptInput.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import type { TextFieldComponent, DataModel } from '@claude-canvas/core';
 import { getByPointer } from '@claude-canvas/core';
 
@@ -90,14 +91,27 @@ export class CcTextField extends LitElement {
     this.dispatchEvent(event);
   }
 
+  private getLabelStyles(): Record<string, string> {
+    const comp = this.component as TextFieldComponent & { labelStyle?: Record<string, unknown> };
+    if (!comp.labelStyle) return {};
+
+    const styles: Record<string, string> = {};
+    if (comp.labelStyle.color) styles.color = String(comp.labelStyle.color);
+    if (comp.labelStyle.fontSize) styles.fontSize = typeof comp.labelStyle.fontSize === 'number'
+      ? `${comp.labelStyle.fontSize}px` : String(comp.labelStyle.fontSize);
+    if (comp.labelStyle.fontWeight) styles.fontWeight = String(comp.labelStyle.fontWeight);
+    return styles;
+  }
+
   render() {
     const value = this.getValue();
+    const labelStyles = this.getLabelStyles();
 
     if (this.component.multiline) {
       return html`
         <div class="field">
           ${this.component.label
-            ? html`<label class=${this.component.required ? 'required' : ''}>${this.component.label}</label>`
+            ? html`<label class=${this.component.required ? 'required' : ''} style=${styleMap(labelStyles)}>${this.component.label}</label>`
             : null
           }
           <textarea
@@ -115,7 +129,7 @@ export class CcTextField extends LitElement {
     return html`
       <div class="field">
         ${this.component.label
-          ? html`<label class=${this.component.required ? 'required' : ''}>${this.component.label}</label>`
+          ? html`<label class=${this.component.required ? 'required' : ''} style=${styleMap(labelStyles)}>${this.component.label}</label>`
           : null
         }
         <input

@@ -15,7 +15,7 @@ import type {
   DataModel,
 } from '@claude-canvas/core';
 import { StreamingJsonParser, parseMessages } from '@claude-canvas/core';
-import { getCompactPrompt } from './prompts.js';
+import { getCompactPrompt, type PromptContext } from './prompts.js';
 
 /**
  * Find the claude CLI executable path
@@ -104,10 +104,15 @@ export class ClaudeCanvasAgent {
    * Generate UI based on a user prompt using Claude Code CLI
    */
   async generateUI(options: GenerateUIOptions): Promise<AgentToClientMessage[]> {
-    const { prompt, streaming = false, onMessage } = options;
+    const { prompt, currentSurface, dataModel, streaming = false, onMessage } = options;
+
+    // Build context for iterative updates
+    const context: PromptContext | undefined = currentSurface
+      ? { currentSurface, dataModel }
+      : undefined;
 
     // Build the full prompt with instructions embedded
-    const fullPrompt = getCompactPrompt(prompt);
+    const fullPrompt = getCompactPrompt(prompt, context);
 
     // Add to conversation history
     this.conversationHistory.push({ role: 'user', content: prompt });

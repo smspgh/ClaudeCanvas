@@ -230,13 +230,36 @@ export class ClaudeCanvasMCPServer {
   } {
     const { description, surfaceId = 'main', dataModel = {} } = args;
 
+    // Check if we have existing state for this surface
+    const existingState = this.state.surfaces.get(surfaceId);
+    const isIteration = !!existingState;
+
+    // Build iteration context if modifying existing UI
+    let iterationContext = '';
+    if (isIteration && existingState) {
+      const surface = existingState.surface as { id: string; title?: string; components?: unknown[] };
+      iterationContext = `
+CURRENT UI STATE (modify this based on the request above):
+Surface ID: ${surface.id}
+Title: ${surface.title || 'Untitled'}
+${surface.components?.length ? `Current components: ${this.summarizeComponents(surface.components)}` : ''}
+
+ITERATION RULES:
+- Preserve existing components unless explicitly asked to remove them
+- Maintain the same surface ID
+- Keep existing data model paths that are still in use
+- Add new components/data as requested
+- You may reorganize layout if needed to accommodate changes
+`;
+    }
+
     // Return the generation prompt with the user's description
     // The LLM will use this to generate the actual UI JSON
     const prompt = `${UI_GENERATION_PROMPT}
 
 Generate a UI for the following request:
 "${description}"
-
+${iterationContext}
 ${dataModel && Object.keys(dataModel).length > 0 ? `\nExisting data model:\n${JSON.stringify(dataModel, null, 2)}` : ''}
 
 Surface ID: ${surfaceId}
@@ -251,6 +274,39 @@ Output ONLY the JSON array. No markdown, no explanations.`;
         },
       ],
     };
+  }
+
+  /**
+   * Create a compact summary of components for context
+   */
+  private summarizeComponents(components: unknown[], depth = 0): string {
+    if (depth > 2) return '[...]';
+
+    const summaries: string[] = [];
+
+    for (const comp of components) {
+      if (typeof comp !== 'object' || comp === null) continue;
+
+      const c = comp as Record<string, unknown>;
+      const type = c.component as string;
+
+      if (!type) continue;
+
+      let summary = type;
+
+      if (c.label) summary += `(${c.label})`;
+      else if (c.content && typeof c.content === 'string') summary += `("${(c.content as string).substring(0, 20)}...")`;
+      else if (c.valuePath) summary += `[${c.valuePath}]`;
+      else if (c.dataPath) summary += `[${c.dataPath}]`;
+
+      if (Array.isArray(c.children) && c.children.length > 0) {
+        summary += `{${this.summarizeComponents(c.children as unknown[], depth + 1)}}`;
+      }
+
+      summaries.push(summary);
+    }
+
+    return summaries.join(', ');
   }
 
   private handleUpdateDataModel(args: { surfaceId?: string; path: string; data: unknown }): {

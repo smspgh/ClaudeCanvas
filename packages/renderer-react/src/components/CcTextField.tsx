@@ -20,9 +20,13 @@ export function CcTextField({ component, dataModel, onInput }: CcTextFieldProps)
     onInput?.(component.valuePath, e.target.value);
   };
 
+  // Support labelStyle for custom label styling
+  const comp = component as TextFieldComponent & { labelStyle?: React.CSSProperties };
+  const labelStyle: React.CSSProperties = comp.labelStyle ?? {};
+
   return (
     <div className="cc-text-field">
-      {component.label && <label htmlFor={id}>{component.label}</label>}
+      {component.label && <label htmlFor={id} style={labelStyle}>{component.label}</label>}
       {component.multiline ? (
         <textarea
           id={id}

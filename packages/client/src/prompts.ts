@@ -1,15 +1,27 @@
+import type { Surface, DataModel } from '@claude-canvas/core';
+
 /**
  * Prompts for Claude Canvas UI generation
  */
+
+export interface PromptContext {
+  /** Current surface being displayed (for iterative updates) */
+  currentSurface?: Surface;
+  /** Current data model state */
+  dataModel?: DataModel;
+}
 
 /**
  * Get a compact prompt that includes instructions inline
  * This avoids Windows command line length limits
  */
-export function getCompactPrompt(userRequest: string): string {
+export function getCompactPrompt(userRequest: string, context?: PromptContext): string {
+  const iterationContext = buildIterationContext(context);
+
   return `You are a ClaudeCanvas UI generator. Output ONLY a JSON array. No text, no markdown, no explanations.
 
 REQUEST: ${userRequest}
+${iterationContext}
 
 FORMAT: [{"type":"dataModelUpdate","path":"/","data":{}},{"type":"surfaceUpdate","surface":{"id":"main","title":"Title","components":[...]}}]
 
@@ -131,4 +143,84 @@ Always respond with a JSON array of messages:
 
 export function getSystemPrompt(): string {
   return UI_GENERATION_SYSTEM_PROMPT;
+}
+
+/**
+ * Build context string for iterative UI updates
+ * Provides Claude with the current state so it can modify rather than replace
+ */
+function buildIterationContext(context?: PromptContext): string {
+  if (!context?.currentSurface) {
+    return '';
+  }
+
+  const parts: string[] = [];
+
+  parts.push(`
+CURRENT UI STATE (modify this based on the request above):
+Surface ID: ${context.currentSurface.id}
+Title: ${context.currentSurface.title || 'Untitled'}`);
+
+  // Include a compact representation of current components
+  if (context.currentSurface.components?.length) {
+    const componentSummary = summarizeComponents(context.currentSurface.components);
+    parts.push(`Components: ${componentSummary}`);
+  }
+
+  // Include relevant data model state
+  if (context.dataModel && Object.keys(context.dataModel).length > 0) {
+    const compactData = JSON.stringify(context.dataModel);
+    // Only include if not too large (keep prompt reasonable)
+    if (compactData.length < 2000) {
+      parts.push(`Data Model: ${compactData}`);
+    } else {
+      // Summarize large data models
+      parts.push(`Data Model Keys: ${Object.keys(context.dataModel).join(', ')}`);
+    }
+  }
+
+  parts.push(`
+ITERATION RULES:
+- Preserve existing components unless explicitly asked to remove them
+- Maintain the same surface ID
+- Keep existing data model paths that are still in use
+- Add new components/data as requested
+- You may reorganize layout if needed to accommodate changes`);
+
+  return parts.join('\n');
+}
+
+/**
+ * Create a compact summary of components for context
+ */
+function summarizeComponents(components: unknown[], depth = 0): string {
+  if (depth > 2) return '[...]'; // Limit depth for brevity
+
+  const summaries: string[] = [];
+
+  for (const comp of components) {
+    if (typeof comp !== 'object' || comp === null) continue;
+
+    const c = comp as Record<string, unknown>;
+    const type = c.component as string;
+
+    if (!type) continue;
+
+    let summary = type;
+
+    // Add key identifying info based on component type
+    if (c.label) summary += `(${c.label})`;
+    else if (c.content && typeof c.content === 'string') summary += `("${(c.content as string).substring(0, 20)}...")`;
+    else if (c.valuePath) summary += `[${c.valuePath}]`;
+    else if (c.dataPath) summary += `[${c.dataPath}]`;
+
+    // Recurse into children
+    if (Array.isArray(c.children) && c.children.length > 0) {
+      summary += `{${summarizeComponents(c.children as unknown[], depth + 1)}}`;
+    }
+
+    summaries.push(summary);
+  }
+
+  return summaries.join(', ');
 }

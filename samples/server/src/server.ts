@@ -6,7 +6,7 @@
 import express from 'express';
 import cors from 'cors';
 import { ClaudeCanvasAgent, generateUIViaCLI } from '@claude-canvas/client';
-import type { AgentToClientMessage } from '@claude-canvas/core';
+import type { AgentToClientMessage, Surface, DataModel } from '@claude-canvas/core';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +20,10 @@ const agent = new ClaudeCanvasAgent({
   model: 'sonnet',
 });
 
+// Track current state for iterative updates
+let currentSurface: Surface | undefined;
+let currentDataModel: DataModel = {};
+
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'claude-canvas' });
@@ -28,14 +32,19 @@ app.get('/health', (_req, res) => {
 // Generate UI endpoint
 app.post('/api/generate', async (req, res) => {
   try {
-    const { prompt, dataModel, currentSurface, useCLI } = req.body;
+    const { prompt, dataModel: clientDataModel, currentSurface: clientSurface, useCLI } = req.body;
 
     if (!prompt) {
       res.status(400).json({ error: 'Prompt is required' });
       return;
     }
 
-    console.log(`[ClaudeCanvas] Generating UI for: "${prompt.substring(0, 50)}..."`);
+    // Use client-provided state or fall back to server-tracked state
+    const surfaceContext = clientSurface || currentSurface;
+    const dataModelContext = clientDataModel || currentDataModel;
+
+    const isIteration = !!surfaceContext;
+    console.log(`[ClaudeCanvas] ${isIteration ? 'Iterating' : 'Generating'} UI for: "${prompt.substring(0, 50)}..."`);
 
     let messages: AgentToClientMessage[];
 
@@ -43,16 +52,30 @@ app.post('/api/generate', async (req, res) => {
       // Use CLI fallback
       messages = await generateUIViaCLI(prompt);
     } else {
-      // Use SDK
+      // Use SDK with context for iteration
       messages = await agent.generateUI({
         prompt,
-        dataModel,
-        currentSurface,
+        dataModel: dataModelContext,
+        currentSurface: surfaceContext,
       });
     }
 
+    // Update tracked state from response
+    for (const msg of messages) {
+      if (msg.type === 'surfaceUpdate') {
+        currentSurface = msg.surface;
+      } else if (msg.type === 'dataModelUpdate') {
+        if (msg.path === '/') {
+          currentDataModel = msg.data as DataModel;
+        } else {
+          // Partial update - would need setByPointer here for full support
+          currentDataModel = { ...currentDataModel, ...(msg.data as DataModel) };
+        }
+      }
+    }
+
     console.log(`[ClaudeCanvas] Generated ${messages.length} message(s)`);
-    res.json({ messages });
+    res.json({ messages, isIteration });
   } catch (error) {
     console.error('[ClaudeCanvas] Error:', error);
     res.status(500).json({
@@ -91,10 +114,21 @@ app.post('/api/action', async (req, res) => {
   }
 });
 
-// Clear conversation history
+// Clear conversation history and state
 app.post('/api/clear', (_req, res) => {
   agent.clearHistory();
+  currentSurface = undefined;
+  currentDataModel = {};
   res.json({ success: true });
+});
+
+// Get current state (for debugging/client sync)
+app.get('/api/state', (_req, res) => {
+  res.json({
+    hasSurface: !!currentSurface,
+    surfaceId: currentSurface?.id,
+    dataModelKeys: Object.keys(currentDataModel),
+  });
 });
 
 // Start server
