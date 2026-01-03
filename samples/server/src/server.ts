@@ -1,11 +1,12 @@
 /**
  * ClaudeCanvas Server
- * Express server that uses Claude Code to generate UIs
+ * Express server that uses LLM providers to generate UIs
+ * Supports: Claude CLI (default), OpenAI, Gemini, Anthropic
  */
 
 import express from 'express';
 import cors from 'cors';
-import { ClaudeCanvasAgent, generateUIViaCLI } from '@claude-canvas/client';
+import { ClaudeCanvasAgent, generateUIViaCLI, type ProviderType } from '@claude-canvas/client';
 import type { AgentToClientMessage, Surface, DataModel } from '@claude-canvas/core';
 
 const app = express();
@@ -15,9 +16,43 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Determine provider from environment
+function getProviderConfig(): { provider: ProviderType; apiKey?: string; model?: string } {
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      provider: 'openai',
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || 'gpt-4o',
+    };
+  }
+  if (process.env.GEMINI_API_KEY) {
+    return {
+      provider: 'gemini',
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_MODEL || 'gemini-1.5-pro',
+    };
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return {
+      provider: 'anthropic',
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+    };
+  }
+  // Default to Claude CLI (no API key required)
+  return {
+    provider: 'claude-cli',
+    model: process.env.CLAUDE_MODEL || 'sonnet',
+  };
+}
+
+const providerConfig = getProviderConfig();
+
 // Create a shared agent instance
 const agent = new ClaudeCanvasAgent({
-  model: 'sonnet',
+  provider: providerConfig.provider,
+  apiKey: providerConfig.apiKey,
+  model: providerConfig.model,
 });
 
 // Track current state for iterative updates
@@ -133,6 +168,10 @@ app.get('/api/state', (_req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+  const providerInfo = providerConfig.provider === 'claude-cli'
+    ? 'Claude Code CLI (no API key needed)'
+    : `${providerConfig.provider.toUpperCase()} API (${providerConfig.model})`;
+
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
@@ -144,9 +183,10 @@ app.listen(PORT, () => {
 ║   POST /api/generate  - Generate UI from prompt           ║
 ║   POST /api/action    - Handle user actions               ║
 ║   POST /api/clear     - Clear conversation history        ║
+║   GET  /api/state     - Get current state                 ║
 ║   GET  /health        - Health check                      ║
 ║                                                           ║
-║   Using Claude Code subscription (no API key needed)      ║
+║   Provider: ${providerInfo.padEnd(42)}║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);

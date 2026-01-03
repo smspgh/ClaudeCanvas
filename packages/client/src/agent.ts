@@ -1,7 +1,7 @@
 /**
  * Claude Canvas Agent
- * Generates UI using Claude Code CLI
- * Uses your Claude Code subscription - no API key required!
+ * Multi-provider LLM support for UI generation
+ * Supports: Claude Code CLI (no API key), OpenAI, Gemini, Anthropic
  */
 
 import { execSync, spawn, spawnSync } from 'child_process';
@@ -16,6 +16,12 @@ import type {
 } from '@claude-canvas/core';
 import { StreamingJsonParser, parseMessages } from '@claude-canvas/core';
 import { getCompactPrompt, type PromptContext } from './prompts.js';
+import {
+  createProvider,
+  generateWithProvider,
+  type ProviderType,
+  type LLMProvider,
+} from './providers.js';
 
 /**
  * Find the claude CLI executable path
@@ -66,11 +72,17 @@ function getClaudePath(): string {
 }
 
 export interface ClaudeCanvasAgentOptions {
-  /** Working directory for Claude Code */
+  /** LLM provider to use (defaults to claude-cli) */
+  provider?: ProviderType;
+  /** API key for the provider (not required for claude-cli) */
+  apiKey?: string;
+  /** Model to use (provider-specific) */
+  model?: string;
+  /** Custom base URL for API calls */
+  baseUrl?: string;
+  /** Working directory for Claude Code CLI */
   cwd?: string;
-  /** Model to use (defaults to sonnet) */
-  model?: 'sonnet' | 'opus' | 'haiku';
-  /** Custom path to claude CLI executable */
+  /** Custom path to claude CLI executable (only for claude-cli provider) */
   claudePath?: string;
 }
 
@@ -95,13 +107,28 @@ export interface ConversationMessage {
 export class ClaudeCanvasAgent {
   private options: ClaudeCanvasAgentOptions;
   private conversationHistory: ConversationMessage[] = [];
+  private provider: LLMProvider | null = null;
 
   constructor(options: ClaudeCanvasAgentOptions = {}) {
-    this.options = options;
+    this.options = {
+      provider: 'claude-cli',
+      ...options,
+    };
+
+    // Initialize provider if not using CLI
+    if (this.options.provider !== 'claude-cli') {
+      this.provider = createProvider({
+        provider: this.options.provider!,
+        apiKey: this.options.apiKey,
+        model: this.options.model,
+        baseUrl: this.options.baseUrl,
+      });
+    }
   }
 
   /**
-   * Generate UI based on a user prompt using Claude Code CLI
+   * Generate UI based on a user prompt
+   * Uses configured provider (OpenAI, Gemini, Anthropic, or Claude CLI)
    */
   async generateUI(options: GenerateUIOptions): Promise<AgentToClientMessage[]> {
     const { prompt, currentSurface, dataModel, streaming = false, onMessage } = options;
@@ -111,13 +138,21 @@ export class ClaudeCanvasAgent {
       ? { currentSurface, dataModel }
       : undefined;
 
-    // Build the full prompt with instructions embedded
-    const fullPrompt = getCompactPrompt(prompt, context);
-
     // Add to conversation history
     this.conversationHistory.push({ role: 'user', content: prompt });
 
     try {
+      // Use API provider if configured
+      if (this.provider) {
+        console.log(`[ClaudeCanvas] Using ${this.options.provider} provider`);
+        const messages = await generateWithProvider(this.provider, { prompt, context });
+        this.conversationHistory.push({ role: 'assistant', content: JSON.stringify(messages) });
+        return messages;
+      }
+
+      // Fall back to Claude CLI
+      const fullPrompt = getCompactPrompt(prompt, context);
+
       if (streaming && onMessage) {
         // Use streaming mode
         const responseText = await this.callClaudeCLIStreaming(fullPrompt, onMessage);
