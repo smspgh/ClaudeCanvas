@@ -103,13 +103,21 @@ await transport.sendAction(userAction);
 
 ```typescript
 type ComponentType =
+  // Layout (8)
   | 'Row' | 'Column' | 'Card' | 'Divider' | 'Modal' | 'Tabs' | 'Accordion' | 'List'
+  // Display (5)
   | 'Text' | 'Image' | 'Icon' | 'Badge' | 'Avatar'
+  // Input (6)
   | 'TextField' | 'Checkbox' | 'Select' | 'Slider' | 'DateTimeInput' | 'MultipleChoice'
+  // Interactive (2)
   | 'Button' | 'Link'
+  // Data Visualization (3)
   | 'Chart' | 'DataTable' | 'RichTextEditor'
+  // Feedback (5)
   | 'Progress' | 'Toast' | 'Alert' | 'Skeleton' | 'Tooltip'
+  // Media (2)
   | 'Video' | 'AudioPlayer';
+// Total: 31 components
 ```
 
 ## License

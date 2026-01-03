@@ -12,7 +12,7 @@ ClaudeCanvas enables AI agents (like Claude) to generate user interfaces by outp
 - **Claude Code Integration**: Native MCP server for seamless Claude Code CLI integration
 - **Cross-Platform Renderers**: Lit (Web Components) and React implementations
 - **Streaming Support**: Progressive UI updates as content generates
-- **Rich Component Library**: 20+ components for forms, layout, media, and more
+- **Rich Component Library**: 31 components for forms, layout, media, and more
 
 ## Quick Links
 

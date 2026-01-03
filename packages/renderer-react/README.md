@@ -90,7 +90,7 @@ The renderer uses CSS custom properties for theming. Override these in your CSS:
 
 ## Supported Components
 
-All 25+ ClaudeCanvas components are supported:
+All 31 ClaudeCanvas components are supported:
 
 - **Layout**: Row, Column, Card, Modal, Tabs, Accordion, Divider, List
 - **Display**: Text, Image, Icon, Badge, Avatar

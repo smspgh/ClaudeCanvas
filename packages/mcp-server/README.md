@@ -83,14 +83,15 @@ Returns the list of available UI components.
 4. Claude generates the declarative JSON UI specification
 5. The JSON can be rendered by any ClaudeCanvas renderer (Lit, React)
 
-## Component Categories
+## Component Categories (31 Total)
 
-- **Layout**: Row, Column, Card, Modal, Tabs, Accordion
-- **Display**: Text, Image, Icon, Badge, Avatar
-- **Input**: TextField, Checkbox, Select, Slider, DateTimeInput
-- **Data**: Chart, DataTable, RichTextEditor
-- **Feedback**: Progress, Toast, Alert, Skeleton
-- **Media**: Video, AudioPlayer
+- **Layout** (8): Row, Column, Card, Divider, Modal, Tabs, Accordion, List
+- **Display** (5): Text, Image, Icon, Badge, Avatar
+- **Input** (6): TextField, Checkbox, Select, Slider, DateTimeInput, MultipleChoice
+- **Interactive** (2): Button, Link
+- **Data** (3): Chart, DataTable, RichTextEditor
+- **Feedback** (5): Progress, Toast, Alert, Skeleton, Tooltip
+- **Media** (2): Video, AudioPlayer
 
 ## License
 

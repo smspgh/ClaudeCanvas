@@ -14,7 +14,7 @@ ClaudeCanvas is a framework that allows AI agents to generate UIs declaratively 
 - **Declarative JSON Format** - UIs are defined as data, not code
 - **Security-First** - Agents can only use pre-approved components
 - **Type-Safe** - Full TypeScript support
-- **25+ Components** - Forms, charts, data tables, media players, and more
+- **31 Components** - Forms, charts, data tables, media players, and more
 
 ## Architecture
 

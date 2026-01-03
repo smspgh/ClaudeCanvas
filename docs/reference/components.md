@@ -115,6 +115,69 @@ Tabbed interface with multiple panels.
 - `valuePath` (required): JSON pointer to store active tab value
 - `tabs` (required): Array of tab definitions with `label`, `value`, and `children`
 
+### Accordion
+
+Collapsible content sections.
+
+```json
+{
+  "component": "Accordion",
+  "items": [
+    {
+      "id": "section1",
+      "title": "Section 1",
+      "subtitle": "Optional subtitle",
+      "icon": "info",
+      "defaultExpanded": true,
+      "children": [...]
+    }
+  ],
+  "allowMultiple": false,
+  "expandedPath": "/ui/expandedSections",
+  "variant": "bordered"
+}
+```
+
+**Properties:**
+- `items` (required): Array of accordion items
+- `allowMultiple`: Allow multiple sections to be expanded simultaneously
+- `expandedPath`: JSON pointer to store expanded item IDs
+- `variant`: `default`, `bordered`, or `separated`
+
+**Item Properties:**
+- `id` (required): Unique item identifier
+- `title` (required): Header text
+- `subtitle`: Optional subtitle text
+- `icon`: Optional icon name
+- `children` (required): Content components
+- `defaultExpanded`: Initially expanded state
+- `disabled`: Disable interaction
+
+### List
+
+Dynamic list with template rendering.
+
+```json
+{
+  "component": "List",
+  "itemsPath": "/data/items",
+  "itemTemplate": {
+    "component": "Text",
+    "contentPath": "/item/name"
+  },
+  "emptyMessage": "No items",
+  "alternateBackground": true,
+  "gap": 8
+}
+```
+
+**Properties:**
+- `itemsPath` (required): JSON pointer to array data
+- `itemTemplate` (required): Component template for each item
+- `emptyMessage`: Message when list is empty
+- `alternateBackground`: Enable zebra striping (alternating row colors)
+- `gap`: Space between items in pixels
+
 ## Display Components
 
 ### Text
@@ -134,9 +197,27 @@ Display text content with styling options.
 **Properties:**
 - `content`: Static text content
 - `contentPath`: JSON pointer for dynamic content
+- `contentExpr`: Computed expression to apply to contentPath value (see below)
 - `textStyle`: `heading1`, `heading2`, `heading3`, `body`, `caption`, `code`
 - `color`: Text color
 - `markdown`: Enable markdown rendering
+
+**Computed Expressions (`contentExpr`):**
+Use `contentExpr` with `contentPath` to compute values from arrays:
+- `count` / `length`: Array length (e.g., "3 items")
+- `sum`: Sum of numeric array values
+- `any`: True if any item is truthy
+- `all`: True if all items are truthy
+- `none`: True if no items are truthy
+
+```json
+{
+  "component": "Text",
+  "contentPath": "/cart/items",
+  "contentExpr": "count",
+  "content": " items in cart"
+}
+```
 
 ### Image
 
@@ -407,26 +488,270 @@ Navigation link.
 - `hrefPath`: JSON pointer for dynamic URL
 - `external`: Open in new tab
 
-### List
+## Data Visualization Components
 
-Dynamic list with template rendering.
+### Chart
+
+Display bar, line, pie, or doughnut charts.
 
 ```json
 {
-  "component": "List",
-  "itemsPath": "/data/items",
-  "itemTemplate": {
-    "component": "Text",
-    "contentPath": "/item/name"
+  "component": "Chart",
+  "chartType": "bar",
+  "title": "Monthly Sales",
+  "data": {
+    "labels": ["Jan", "Feb", "Mar"],
+    "datasets": [
+      {"label": "Revenue", "data": [100, 200, 150], "color": "#4CAF50"}
+    ]
   },
-  "emptyMessage": "No items"
+  "showLegend": true,
+  "height": 300
 }
 ```
 
 **Properties:**
-- `itemsPath` (required): JSON pointer to array data
-- `itemTemplate` (required): Component template for each item
-- `emptyMessage`: Message when list is empty
+- `chartType` (required): `bar`, `line`, `pie`, or `doughnut`
+- `data`: Inline chart data with `labels` and `datasets`
+- `dataPath`: JSON pointer to chart data
+- `title`: Chart title
+- `showLegend`: Show legend
+- `height`: Chart height in pixels
+
+### DataTable
+
+Sortable, paginated data tables.
+
+```json
+{
+  "component": "DataTable",
+  "dataPath": "/data/users",
+  "columns": [
+    {"key": "status", "label": "Status", "type": "statusDot"},
+    {"key": "avatar", "label": "", "type": "avatar", "width": 50},
+    {"key": "name", "label": "Name", "sortable": true},
+    {"key": "role", "label": "Role", "type": "badge"}
+  ],
+  "pagination": true,
+  "pageSize": 10,
+  "searchable": true,
+  "searchPlaceholder": "Search users...",
+  "alternateBackground": true,
+  "emptyMessage": "No users found"
+}
+```
+
+**Properties:**
+- `dataPath` (required): JSON pointer to row data array
+- `columns` (required): Column definitions
+- `pagination`: Enable pagination
+- `pageSize`: Rows per page (default: 10)
+- `searchable`: Show search input
+- `searchPlaceholder`: Custom search placeholder text
+- `alternateBackground`: Enable zebra striping (alternating row colors)
+- `selectable`: Enable row selection
+- `selectionPath`: JSON pointer for selected row IDs
+- `emptyMessage`: Message when no data
+
+**Column Types:**
+- `text` (default): Plain text
+- `image`: Display as image
+- `avatar`: Display as avatar
+- `badge`: Display as badge
+- `statusDot`: Colored status indicator dot
+
+### RichTextEditor
+
+WYSIWYG rich text editor.
+
+```json
+{
+  "component": "RichTextEditor",
+  "valuePath": "/content/html",
+  "placeholder": "Start writing...",
+  "minHeight": 200,
+  "toolbar": ["bold", "italic", "heading", "list", "link"]
+}
+```
+
+**Properties:**
+- `valuePath` (required): JSON pointer for HTML content
+- `placeholder`: Placeholder text
+- `minHeight`: Minimum height in pixels
+- `toolbar`: Array of enabled tools (`bold`, `italic`, `underline`, `strike`, `heading`, `list`, `link`, `image`, `code`)
+- `disabled`: Disable editing
+
+## Feedback Components
+
+### Progress
+
+Linear or circular progress indicator.
+
+```json
+{
+  "component": "Progress",
+  "value": 75,
+  "variant": "linear",
+  "showLabel": true,
+  "color": "#4CAF50"
+}
+```
+
+**Properties:**
+- `value`: Progress value (0-100), omit for indeterminate
+- `valuePath`: JSON pointer to progress value
+- `variant`: `linear` or `circular`
+- `size`: Size for circular (`small`, `medium`, `large`)
+- `color`: Progress indicator color
+- `trackColor`: Background track color
+- `showLabel`: Show percentage label
+- `label`: Custom label text
+
+### Badge
+
+Status indicator label or chip.
+
+```json
+{
+  "component": "Badge",
+  "content": "New",
+  "variant": "success",
+  "pill": true,
+  "icon": "check"
+}
+```
+
+**Properties:**
+- `content`: Badge text
+- `contentPath`: JSON pointer for dynamic content
+- `variant`: `default`, `success`, `warning`, `error`, `info`
+- `size`: `small`, `medium`, `large`
+- `color`: Custom background color
+- `textColor`: Custom text color
+- `pill`: Fully rounded shape
+- `dot`: Show as dot indicator only (no text)
+- `icon`: Icon name before text
+
+### Avatar
+
+User profile image or initials.
+
+```json
+{
+  "component": "Avatar",
+  "src": "https://example.com/photo.jpg",
+  "alt": "John Doe",
+  "initials": "JD",
+  "size": "medium",
+  "shape": "circle",
+  "status": "online"
+}
+```
+
+**Properties:**
+- `src`: Image URL
+- `srcPath`: JSON pointer for dynamic source
+- `alt`: Alt text
+- `initials`: Fallback initials
+- `initialsPath`: JSON pointer for dynamic initials
+- `size`: `small`, `medium`, `large`, or number
+- `shape`: `circle`, `square`, `rounded`
+- `color`: Background color for initials
+- `status`: `online`, `offline`, `busy`, `away`
+
+### Toast
+
+Notification message popup.
+
+```json
+{
+  "component": "Toast",
+  "openPath": "/ui/showToast",
+  "message": "Changes saved successfully",
+  "variant": "success",
+  "position": "bottom-right",
+  "duration": 3000,
+  "dismissible": true
+}
+```
+
+**Properties:**
+- `openPath` (required): JSON pointer to boolean visibility
+- `message`: Toast message text
+- `messagePath`: JSON pointer for dynamic message
+- `variant`: `info`, `success`, `warning`, `error`
+- `position`: `top`, `top-left`, `top-right`, `bottom`, `bottom-left`, `bottom-right`
+- `duration`: Auto-dismiss time in ms (0 = no auto-dismiss)
+- `dismissible`: Show close button
+- `actionLabel`: Action button text
+- `action`: Action to perform on button click
+
+### Alert
+
+Inline alert/callout message.
+
+```json
+{
+  "component": "Alert",
+  "title": "Warning",
+  "message": "This action cannot be undone",
+  "variant": "warning",
+  "showIcon": true,
+  "dismissible": true
+}
+```
+
+**Properties:**
+- `message` (required): Alert message
+- `messagePath`: JSON pointer for dynamic message
+- `title`: Alert title
+- `variant`: `info`, `success`, `warning`, `error`
+- `showIcon`: Show variant icon
+- `dismissible`: Show dismiss button
+- `openPath`: JSON pointer to control visibility
+- `actions`: Array of action button components
+
+### Skeleton
+
+Loading placeholder.
+
+```json
+{
+  "component": "Skeleton",
+  "variant": "text",
+  "lines": 3,
+  "animation": "pulse"
+}
+```
+
+**Properties:**
+- `variant`: `text`, `circular`, `rectangular`
+- `width`: Width (default: 100%)
+- `height`: Height
+- `lines`: Number of text lines
+- `animation`: `pulse`, `wave`, `none`
+
+### Tooltip
+
+Hover information popup.
+
+```json
+{
+  "component": "Tooltip",
+  "content": "Click to save",
+  "position": "top",
+  "delay": 300,
+  "children": [
+    {"component": "Button", "label": "Save", "action": {"type": "submit"}}
+  ]
+}
+```
+
+**Properties:**
+- `content` (required): Tooltip text
+- `position`: `top`, `bottom`, `left`, `right`
+- `delay`: Show delay in ms
+- `children` (required): Component to wrap
 
 ## Common Properties
 
