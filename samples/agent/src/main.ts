@@ -46,9 +46,7 @@ const copyJsonBtn = document.getElementById('copy-json') as HTMLButtonElement;
 const rendererChips = document.querySelectorAll('.renderer-chip') as NodeListOf<HTMLDivElement>;
 const rendererPanels = document.querySelectorAll('.renderer-panel') as NodeListOf<HTMLDivElement>;
 
-// Code output elements
-const angularCode = document.getElementById('angular-code') as HTMLPreElement;
-const angularTemplateCode = document.getElementById('angular-template-code') as HTMLPreElement;
+// Code output elements (Flutter and Android only - Angular is now a live renderer)
 const flutterCode = document.getElementById('flutter-code') as HTMLPreElement;
 const flutterStateCode = document.getElementById('flutter-state-code') as HTMLPreElement;
 const androidCode = document.getElementById('android-code') as HTMLPreElement;
@@ -679,17 +677,13 @@ class ${screenName}ViewModel : ViewModel() {
 // ============================================================================
 
 function updateCodePreviews(surface: Surface) {
-  // Angular
-  angularCode.textContent = generateAngularComponent(surface);
-  angularTemplateCode.textContent = generateAngularTemplate(surface);
-
   // Flutter
-  flutterCode.textContent = generateFlutterWidget(surface);
-  flutterStateCode.textContent = generateFlutterState(surface);
+  if (flutterCode) flutterCode.textContent = generateFlutterWidget(surface);
+  if (flutterStateCode) flutterStateCode.textContent = generateFlutterState(surface);
 
   // Android
-  androidCode.textContent = generateAndroidComposable(surface);
-  androidViewModelCode.textContent = generateAndroidViewModel(surface);
+  if (androidCode) androidCode.textContent = generateAndroidComposable(surface);
+  if (androidViewModelCode) androidViewModelCode.textContent = generateAndroidViewModel(surface);
 }
 
 // ============================================================================
@@ -1287,13 +1281,11 @@ async function clearSession() {
   if (emptyStateAngular) emptyStateAngular.style.display = 'block';
   jsonOutput.textContent = '// Generated JSON will appear here';
 
-  // Reset code previews
-  angularCode.textContent = '// Generate a UI to see Angular code';
-  angularTemplateCode.textContent = '// Generate a UI to see Angular template';
-  flutterCode.textContent = '// Generate a UI to see Flutter code';
-  flutterStateCode.textContent = '// Generate a UI to see Flutter state';
-  androidCode.textContent = '// Generate a UI to see Android code';
-  androidViewModelCode.textContent = '// Generate a UI to see Android ViewModel';
+  // Reset code previews (Flutter and Android only)
+  if (flutterCode) flutterCode.textContent = '// Generate a UI to see Flutter code';
+  if (flutterStateCode) flutterStateCode.textContent = '// Generate a UI to see Flutter state';
+  if (androidCode) androidCode.textContent = '// Generate a UI to see Android code';
+  if (androidViewModelCode) androidViewModelCode.textContent = '// Generate a UI to see Android ViewModel';
 
   updateIterationIndicator();
 
