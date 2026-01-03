@@ -45,5 +45,6 @@ export async function initAngularElement(): Promise<void> {
   }
 }
 
-// Auto-initialize when this module is imported
-initAngularElement().catch(console.error);
+// Note: Auto-initialization removed to prevent conflicts when importing
+// the package in Angular applications. Call initAngularElement() manually
+// when using as a custom element in non-Angular contexts.

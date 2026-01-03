@@ -30,13 +30,32 @@ const iterationIndicator = document.getElementById('iteration-indicator') as HTM
 const emptyStateLit = document.getElementById('empty-state-lit') as HTMLDivElement;
 const emptyStateReact = document.getElementById('empty-state-react') as HTMLDivElement;
 const emptyStateAngular = document.getElementById('empty-state-angular') as HTMLDivElement;
+const emptyStateFlutter = document.getElementById('empty-state-flutter') as HTMLDivElement;
+const emptyStateAndroid = document.getElementById('empty-state-android') as HTMLDivElement;
 
-// Angular surface element (custom element from @angular/elements)
-const surfaceAngular = document.getElementById('surface-angular') as HTMLElement & {
-  surface: Surface | null;
-  initialDataModel: DataModel;
-  processMessages?: (messages: AgentToClientMessage[]) => void;
+// Iframe elements for Angular, Flutter, Android
+const angularIframe = document.getElementById('angular-iframe') as HTMLIFrameElement;
+const flutterIframe = document.getElementById('flutter-iframe') as HTMLIFrameElement;
+const androidIframe = document.getElementById('android-iframe') as HTMLIFrameElement;
+
+// Track iframe ready states
+const iframeReady = {
+  angular: false,
+  flutter: false,
+  android: false,
 };
+
+// Queue messages until iframes are ready
+const messageQueue: {
+  angular: AgentToClientMessage[][];
+  flutter: AgentToClientMessage[][];
+  android: AgentToClientMessage[][];
+} = {
+  angular: [],
+  flutter: [],
+  android: [],
+};
+
 const loading = document.getElementById('loading') as HTMLDivElement;
 const jsonOutput = document.getElementById('json-output') as HTMLDivElement;
 const serverStatus = document.getElementById('server-status') as HTMLDivElement;
@@ -46,11 +65,8 @@ const copyJsonBtn = document.getElementById('copy-json') as HTMLButtonElement;
 const rendererChips = document.querySelectorAll('.renderer-chip') as NodeListOf<HTMLDivElement>;
 const rendererPanels = document.querySelectorAll('.renderer-panel') as NodeListOf<HTMLDivElement>;
 
-// Code output elements (Flutter and Android only - Angular is now a live renderer)
-const flutterCode = document.getElementById('flutter-code') as HTMLPreElement;
-const flutterStateCode = document.getElementById('flutter-state-code') as HTMLPreElement;
-const androidCode = document.getElementById('android-code') as HTMLPreElement;
-const androidViewModelCode = document.getElementById('android-viewmodel-code') as HTMLPreElement;
+// Note: All 5 renderers now use live themed previews
+// Code generators are still available for export but not displayed in UI
 
 // React state
 let reactRoot: Root | null = null;
@@ -110,49 +126,93 @@ function processMessagesReact(messages: AgentToClientMessage[]) {
   renderReact();
 }
 
-// Angular state
-let angularSurface: Surface | null = null;
-let angularDataModel: DataModel = {};
-
-// Process messages for Angular
-function processMessagesAngular(messages: AgentToClientMessage[]) {
-  for (const message of messages) {
-    switch (message.type) {
-      case 'surfaceUpdate':
-        angularSurface = message.surface;
-        break;
-      case 'dataModelUpdate':
-        angularDataModel = setByPointer(angularDataModel, message.path, message.data);
-        break;
-      case 'deleteSurface':
-        if (angularSurface?.id === message.surfaceId) {
-          angularSurface = null;
-        }
-        break;
-    }
+// Send messages to an iframe
+function sendToIframe(iframe: HTMLIFrameElement, messages: AgentToClientMessage[]) {
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({
+      type: 'claude-canvas-messages',
+      messages,
+    }, '*');
   }
-  renderAngular();
 }
 
-// Render Angular surface
-function renderAngular() {
-  if (!surfaceAngular) return;
-
-  // Angular Elements use property binding, set properties directly
-  if (surfaceAngular.processMessages) {
-    // If the Angular component has processMessages method, use it
-    // This is the preferred way as it handles change detection
+// Process messages for iframe previews (Angular, Flutter, Android)
+function processMessagesIframes(messages: AgentToClientMessage[]) {
+  // Send to Angular iframe
+  if (iframeReady.angular && angularIframe) {
+    sendToIframe(angularIframe, messages);
   } else {
-    // Fallback: Set properties directly (may require manual change detection)
-    (surfaceAngular as any).surface = angularSurface;
-    (surfaceAngular as any).initialDataModel = angularDataModel;
+    messageQueue.angular.push(messages);
   }
 
-  // Hide empty state if we have a surface
-  if (emptyStateAngular) {
-    emptyStateAngular.style.display = angularSurface ? 'none' : 'block';
+  // Send to Flutter iframe
+  if (iframeReady.flutter && flutterIframe) {
+    sendToIframe(flutterIframe, messages);
+  } else {
+    messageQueue.flutter.push(messages);
+  }
+
+  // Send to Android iframe
+  if (iframeReady.android && androidIframe) {
+    sendToIframe(androidIframe, messages);
+  } else {
+    messageQueue.android.push(messages);
+  }
+
+  // Update empty states based on surface content
+  const hasSurface = messages.some(m => m.type === 'surfaceUpdate');
+  const isDelete = messages.some(m => m.type === 'deleteSurface');
+
+  if (hasSurface) {
+    if (emptyStateAngular) emptyStateAngular.classList.add('hidden');
+    if (emptyStateFlutter) emptyStateFlutter.classList.add('hidden');
+    if (emptyStateAndroid) emptyStateAndroid.classList.add('hidden');
+  } else if (isDelete) {
+    if (emptyStateAngular) emptyStateAngular.classList.remove('hidden');
+    if (emptyStateFlutter) emptyStateFlutter.classList.remove('hidden');
+    if (emptyStateAndroid) emptyStateAndroid.classList.remove('hidden');
   }
 }
+
+// Listen for ready messages from iframes
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || typeof data !== 'object') return;
+
+  // Handle iframe ready signals
+  if (data.type === 'angular-preview-ready') {
+    console.log('[ClaudeCanvas] Angular preview ready');
+    iframeReady.angular = true;
+    // Flush queued messages
+    for (const messages of messageQueue.angular) {
+      sendToIframe(angularIframe, messages);
+    }
+    messageQueue.angular = [];
+  } else if (data.type === 'flutter-preview-ready') {
+    console.log('[ClaudeCanvas] Flutter preview ready');
+    iframeReady.flutter = true;
+    for (const messages of messageQueue.flutter) {
+      sendToIframe(flutterIframe, messages);
+    }
+    messageQueue.flutter = [];
+  } else if (data.type === 'android-preview-ready') {
+    console.log('[ClaudeCanvas] Android preview ready');
+    iframeReady.android = true;
+    for (const messages of messageQueue.android) {
+      sendToIframe(androidIframe, messages);
+    }
+    messageQueue.android = [];
+  }
+
+  // Handle action forwarding from iframes
+  if (data.type === 'angular-preview-action' ||
+      data.type === 'flutter-preview-action' ||
+      data.type === 'android-preview-action') {
+    const platform = data.type.split('-')[0];
+    console.log(`[ClaudeCanvas] ${platform} action:`, data.action);
+    alert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} Action: ${data.action.type}`);
+  }
+});
 
 // ============================================================================
 // CODE GENERATORS
@@ -673,17 +733,26 @@ class ${screenName}ViewModel : ViewModel() {
 }
 
 // ============================================================================
-// UPDATE CODE PREVIEWS
+// CODE GENERATION (for export/reference)
 // ============================================================================
 
-function updateCodePreviews(surface: Surface) {
-  // Flutter
-  if (flutterCode) flutterCode.textContent = generateFlutterWidget(surface);
-  if (flutterStateCode) flutterStateCode.textContent = generateFlutterState(surface);
-
-  // Android
-  if (androidCode) androidCode.textContent = generateAndroidComposable(surface);
-  if (androidViewModelCode) androidViewModelCode.textContent = generateAndroidViewModel(surface);
+// Code generators are available for export but not displayed in the UI
+// Users can copy the JSON and use the generators to get platform-specific code
+function getGeneratedCode(surface: Surface) {
+  return {
+    angular: {
+      component: generateAngularComponent(surface),
+      template: generateAngularTemplate(surface),
+    },
+    flutter: {
+      widget: generateFlutterWidget(surface),
+      state: generateFlutterState(surface),
+    },
+    android: {
+      composable: generateAndroidComposable(surface),
+      viewModel: generateAndroidViewModel(surface),
+    },
+  };
 }
 
 // ============================================================================
@@ -1221,17 +1290,17 @@ async function generateUI() {
     messages = matchDemoPrompt(prompt) ?? demoResponses.settings;
   }
 
-  // Process messages for all live renderers
+  // Process messages for all 5 live renderers
   surfaceLit.processMessages(messages);
   processMessagesReact(messages);
-  processMessagesAngular(messages);
+  processMessagesIframes(messages);
 
   // Track state for future iterations
   for (const msg of messages) {
     if (msg.type === 'surfaceUpdate') {
       currentSurface = msg.surface;
-      // Update code previews
-      updateCodePreviews(msg.surface);
+      // Store generated code for potential export
+      console.log('[ClaudeCanvas] Generated code available:', getGeneratedCode(msg.surface));
     } else if (msg.type === 'dataModelUpdate') {
       if (msg.path === '/') {
         currentDataModel = msg.data as DataModel;
@@ -1260,8 +1329,6 @@ async function clearSession() {
   currentDataModel = {};
   reactSurface = null;
   reactDataModel = {};
-  angularSurface = null;
-  angularDataModel = {};
 
   // Clear server state if available
   if (serverAvailable) {
@@ -1272,20 +1339,20 @@ async function clearSession() {
     }
   }
 
-  // Reset UI
-  surfaceLit.processMessages([{ type: 'deleteSurface', surfaceId: 'main' }]);
+  // Reset all 5 live renderers
+  const deleteMessage: AgentToClientMessage[] = [{ type: 'deleteSurface', surfaceId: 'main' }];
+  surfaceLit.processMessages(deleteMessage);
+  processMessagesIframes(deleteMessage);
   renderReact();
-  renderAngular();
+
+  // Show empty states
   emptyStateLit.style.display = 'block';
   emptyStateReact.style.display = 'block';
-  if (emptyStateAngular) emptyStateAngular.style.display = 'block';
-  jsonOutput.textContent = '// Generated JSON will appear here';
+  if (emptyStateAngular) emptyStateAngular.classList.remove('hidden');
+  if (emptyStateFlutter) emptyStateFlutter.classList.remove('hidden');
+  if (emptyStateAndroid) emptyStateAndroid.classList.remove('hidden');
 
-  // Reset code previews (Flutter and Android only)
-  if (flutterCode) flutterCode.textContent = '// Generate a UI to see Flutter code';
-  if (flutterStateCode) flutterStateCode.textContent = '// Generate a UI to see Flutter state';
-  if (androidCode) androidCode.textContent = '// Generate a UI to see Android code';
-  if (androidViewModelCode) androidViewModelCode.textContent = '// Generate a UI to see Android ViewModel';
+  jsonOutput.textContent = '// Generated JSON will appear here';
 
   updateIterationIndicator();
 
@@ -1345,11 +1412,10 @@ copyJsonBtn.addEventListener('click', async () => {
   // Initialize React root
   renderReact();
 
-  // Initialize Angular custom element (disabled pending bundle format compatibility)
-  // try {
-  //   await initAngularElement();
-  //   console.log('Angular renderer initialized');
-  // } catch (error) {
-  //   console.error('Failed to initialize Angular renderer:', error);
-  // }
+  console.log('[ClaudeCanvas] All 5 live renderers ready:');
+  console.log('  - Lit (direct)');
+  console.log('  - React (direct)');
+  console.log('  - Angular Material (iframe → localhost:4201)');
+  console.log('  - Flutter Material 3 (iframe → localhost:4202)');
+  console.log('  - Android Compose (iframe → localhost:4203)');
 })();

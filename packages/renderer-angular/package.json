@@ -2,9 +2,23 @@
   "name": "@claude-canvas/renderer-angular",
   "version": "0.1.0",
   "description": "Angular renderer for ClaudeCanvas declarative UI framework",
+  "main": "../../dist/renderer-angular/fesm2022/claude-canvas-renderer-angular.mjs",
+  "module": "../../dist/renderer-angular/fesm2022/claude-canvas-renderer-angular.mjs",
+  "types": "../../dist/renderer-angular/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "../../dist/renderer-angular/index.d.ts",
+      "esm2022": "../../dist/renderer-angular/esm2022/claude-canvas-renderer-angular.mjs",
+      "esm": "../../dist/renderer-angular/esm2022/claude-canvas-renderer-angular.mjs",
+      "default": "../../dist/renderer-angular/fesm2022/claude-canvas-renderer-angular.mjs"
+    },
+    "./package.json": {
+      "default": "./package.json"
+    }
+  },
   "peerDependencies": {
-    "@angular/common": "^17.0.0 || ^18.0.0",
-    "@angular/core": "^17.0.0 || ^18.0.0"
+    "@angular/common": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "@angular/core": "^17.0.0 || ^18.0.0 || ^19.0.0"
   },
   "dependencies": {
     "@angular/elements": "^18.0.0",

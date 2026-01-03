@@ -31,3 +31,14 @@ coverage/
 # Vite
 .vite/
 .playwright-mcp/
+
+# Angular
+.angular/
+
+# Flutter
+build/
+.dart_tool/
+.packages
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies

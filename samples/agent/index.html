@@ -288,6 +288,135 @@
         display: inline;
       }
 
+      /* Platform Theme Containers */
+      .platform-theme {
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      /* Angular Material Theme */
+      .theme-angular {
+        --cc-primary: #3f51b5;
+        --cc-primary-hover: #303f9f;
+        --cc-primary-light: rgba(63, 81, 181, 0.12);
+        --cc-secondary: #f5f5f5;
+        --cc-secondary-hover: #e0e0e0;
+        --cc-danger: #f44336;
+        --cc-danger-hover: #d32f2f;
+        --cc-text: rgba(0, 0, 0, 0.87);
+        --cc-text-secondary: rgba(0, 0, 0, 0.54);
+        --cc-text-placeholder: rgba(0, 0, 0, 0.38);
+        --cc-border: rgba(0, 0, 0, 0.12);
+        --cc-input-bg: #ffffff;
+        --cc-card-bg: #ffffff;
+        --cc-disabled-bg: #fafafa;
+        --cc-font: Roboto, 'Helvetica Neue', sans-serif;
+        background: #fafafa;
+      }
+
+      .theme-angular cc-button button {
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+      }
+
+      /* Flutter Material 3 Theme */
+      .theme-flutter {
+        --cc-primary: #6750a4;
+        --cc-primary-hover: #4f378b;
+        --cc-primary-light: rgba(103, 80, 164, 0.12);
+        --cc-secondary: #e8def8;
+        --cc-secondary-hover: #d0bcff;
+        --cc-danger: #b3261e;
+        --cc-danger-hover: #8c1d18;
+        --cc-text: #1c1b1f;
+        --cc-text-secondary: #49454f;
+        --cc-text-placeholder: #79747e;
+        --cc-border: #79747e;
+        --cc-input-bg: #fffbfe;
+        --cc-card-bg: #fffbfe;
+        --cc-disabled-bg: #e6e0e9;
+        --cc-font: 'Google Sans', Roboto, sans-serif;
+        background: #fffbfe;
+      }
+
+      .theme-flutter cc-button button {
+        border-radius: 20px;
+        font-weight: 500;
+      }
+
+      .theme-flutter cc-card {
+        border-radius: 12px;
+      }
+
+      .theme-flutter cc-text-field input {
+        border-radius: 4px 4px 0 0;
+        border-bottom: 2px solid var(--cc-primary);
+      }
+
+      /* Android Compose Material You Theme */
+      .theme-android {
+        --cc-primary: #006c4c;
+        --cc-primary-hover: #00513a;
+        --cc-primary-light: rgba(0, 108, 76, 0.12);
+        --cc-secondary: #cce8dd;
+        --cc-secondary-hover: #b3dccf;
+        --cc-danger: #ba1a1a;
+        --cc-danger-hover: #93000a;
+        --cc-text: #191c1a;
+        --cc-text-secondary: #404943;
+        --cc-text-placeholder: #6f7974;
+        --cc-border: #6f7974;
+        --cc-input-bg: #fbfdf9;
+        --cc-card-bg: #fbfdf9;
+        --cc-disabled-bg: #dfe4df;
+        --cc-font: 'Google Sans', Roboto, sans-serif;
+        background: #fbfdf9;
+      }
+
+      .theme-android cc-button button {
+        border-radius: 20px;
+        font-weight: 500;
+        padding: 10px 24px;
+      }
+
+      .theme-android cc-card {
+        border-radius: 16px;
+      }
+
+      .theme-android cc-text-field input {
+        border-radius: 4px;
+      }
+
+      /* Iframe Previews */
+      .iframe-content {
+        position: relative;
+        min-height: 350px;
+      }
+
+      .preview-iframe {
+        width: 100%;
+        height: 350px;
+        border: none;
+        background: #f8fafc;
+      }
+
+      .iframe-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .iframe-overlay.hidden {
+        display: none;
+      }
+
       /* Renderer Grid */
       .renderers-grid {
         display: grid;
@@ -449,56 +578,44 @@
           </div>
         </div>
 
-        <!-- Angular Renderer (Live) -->
+        <!-- Angular Renderer (Real Angular App via iframe) -->
         <div class="panel renderer-panel" id="angular-panel" data-renderer="angular">
           <div class="panel-header">
-            <span class="icon">🅰️</span> Angular Renderer
-            <span class="badge badge-web">Live</span>
+            <span class="icon">🅰️</span> Angular Material
+            <span class="badge badge-web">Real</span>
           </div>
-          <div class="panel-content">
-            <cc-surface-angular id="surface-angular"></cc-surface-angular>
-            <div id="empty-state-angular" class="empty-state">
-              Enter a prompt to see the Angular renderer
+          <div class="panel-content iframe-content">
+            <iframe id="angular-iframe" src="http://localhost:4201" class="preview-iframe"></iframe>
+            <div id="empty-state-angular" class="empty-state iframe-overlay">
+              Enter a prompt to see the Angular Material renderer
             </div>
           </div>
         </div>
 
-        <!-- Flutter Renderer (Code Preview) -->
+        <!-- Flutter Renderer (Real Flutter Web App via iframe) -->
         <div class="panel renderer-panel" id="flutter-panel" data-renderer="flutter">
           <div class="panel-header">
-            <span class="icon">🐦</span> Flutter Renderer
-            <span class="badge badge-mobile">Mobile</span>
+            <span class="icon">🐦</span> Flutter Material 3
+            <span class="badge badge-mobile">Real</span>
           </div>
-          <div class="panel-content">
-            <div class="code-tabs">
-              <button class="code-tab active" data-tab="widget">Widget</button>
-              <button class="code-tab" data-tab="state">State</button>
-            </div>
-            <div id="flutter-widget" class="code-content active">
-              <pre class="code-output" id="flutter-code">// Generate a UI to see Flutter code</pre>
-            </div>
-            <div id="flutter-state" class="code-content">
-              <pre class="code-output" id="flutter-state-code">// Generate a UI to see Flutter state</pre>
+          <div class="panel-content iframe-content">
+            <iframe id="flutter-iframe" src="http://localhost:4202" class="preview-iframe"></iframe>
+            <div id="empty-state-flutter" class="empty-state iframe-overlay">
+              Enter a prompt to see the Flutter Material 3 renderer
             </div>
           </div>
         </div>
 
-        <!-- Android Renderer (Code Preview) -->
+        <!-- Android/Compose Renderer (MUI-based preview via iframe) -->
         <div class="panel renderer-panel" id="android-panel" data-renderer="android">
           <div class="panel-header">
-            <span class="icon">🤖</span> Android (Jetpack Compose)
-            <span class="badge badge-mobile">Mobile</span>
+            <span class="icon">🤖</span> Android Compose
+            <span class="badge badge-mobile">Real</span>
           </div>
-          <div class="panel-content">
-            <div class="code-tabs">
-              <button class="code-tab active" data-tab="composable">Composable</button>
-              <button class="code-tab" data-tab="viewmodel">ViewModel</button>
-            </div>
-            <div id="android-composable" class="code-content active">
-              <pre class="code-output" id="android-code">// Generate a UI to see Android code</pre>
-            </div>
-            <div id="android-viewmodel" class="code-content">
-              <pre class="code-output" id="android-viewmodel-code">// Generate a UI to see Android ViewModel</pre>
+          <div class="panel-content iframe-content">
+            <iframe id="android-iframe" src="http://localhost:4203" class="preview-iframe"></iframe>
+            <div id="empty-state-android" class="empty-state iframe-overlay">
+              Enter a prompt to see the Android Compose renderer
             </div>
           </div>
         </div>

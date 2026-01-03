@@ -1,0 +1,27 @@
+name: claude_canvas_renderer
+description: Flutter renderer for ClaudeCanvas declarative UI framework. Renders AI-generated UIs from JSON specifications.
+version: 0.1.0
+homepage: https://github.com/anthropics/claude-canvas
+repository: https://github.com/anthropics/claude-canvas
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_chart: ^0.68.0
+  intl: ^0.19.0
+  flutter_html: ^3.0.0-beta.2
+  url_launcher: ^6.2.0
+  video_player: ^2.8.0
+  audioplayers: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
